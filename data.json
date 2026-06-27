@@ -1,0 +1,22 @@
+[
+  {
+    "type": "DossierMedical",
+    "titre": "Dossier Chraibi Mohammed",
+    "annee": 2026,
+    "nb_pages": 15,
+    "patient_id": "P001"
+  },
+  {
+    "type": "VideoConsultation",
+    "titre": "Consultation Cardiologie",
+    "annee": 2026,
+    "duree_min": 30.0,
+    "doctor_id": 1
+  },
+  {
+    "type": "RapportAudio",
+    "titre": "Rapport Analyse Sanguine",
+    "annee": 2026,
+    "taille_mb": 2.5
+  }
+]

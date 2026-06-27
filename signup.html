@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Créer un compte{% endblock %}
+
+{% block body %}
+<div class="min-h-screen w-full flex flex-col md:flex-row">
+    <!-- Left -->
+    <div class="md:w-2/5 flex flex-col justify-between p-10 relative overflow-hidden">
+        <video autoplay muted loop playsinline
+        class="absolute inset-0 w-full h-full object-cover opacity-50">
+        <source src="{{ url_for('static', filename='bg4.mp4') }}" type="video/mp4">
+    </video>
+        <div class="absolute w-96 h-96 rounded-full bg-emerald-500/5 blur-3xl -top-20 -left-20 pointer-events-none"></div>
+        <div class="flex items-center gap-3 z-10">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center font-bold text-white neon-border">H</div>
+            <span class="font-comfortaa text-2xl font-bold text-white">H-<span class="text-cyan-400">Ai</span></span>
+        </div>
+        <div class="my-auto z-10 space-y-6">
+            <div class="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-3xl">🏥</div>
+            <h2 class="text-3xl font-bold text-white leading-tight">Rejoignez H-Ai en tant que Patient.</h2>
+            <p class="text-slate-400 text-sm leading-relaxed">Créez votre dossier médical numérique, prenez vos rendez-vous en ligne et consultez vos analyses depuis n'importe où.</p>
+            <div class="space-y-3 text-xs">
+                <div class="flex items-center gap-3 text-slate-300"><span class="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-check text-[10px]"></i></span>Dossier médical sécurisé</div>
+                <div class="flex items-center gap-3 text-slate-300"><span class="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-check text-[10px]"></i></span>Prise de RDV en ligne</div>
+                <div class="flex items-center gap-3 text-slate-300"><span class="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-check text-[10px]"></i></span>Analyses et résultats biologiques</div>
+                <div class="flex items-center gap-3 text-slate-300"><span class="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-check text-[10px]"></i></span>Remboursement AMO/CNSS automatique</div>
+            </div>
+        </div>
+        <div class="text-slate-600 text-xs z-10">© 2026 H-Ai Hospital System.</div>
+    </div>
+
+    <!-- Right: Signup form -->
+    <div class="md:w-3/5 flex items-center justify-center p-8 overflow-y-auto" style="background-color: hsl(240, 94%, 7%);"> 
+        <div class="w-full max-w-lg space-y-5 fade-in">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-bold text-white">Créer votre compte Patient</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Tous les champs sont obligatoires</p>
+                </div>
+                <a href="/" class="text-xs text-slate-400 hover:text-white flex items-center gap-1 transition"><i class="fa-solid fa-arrow-left text-[10px]"></i>Retour</a>
+            </div>
+
+            <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+                <!-- Step indicator -->
+                <div class="flex items-center gap-2 pb-3 border-b border-slate-800">
+                    <div id="su-step-1-ind" class="flex items-center gap-1.5 text-[10px] font-bold text-cyan-400"><span class="w-5 h-5 rounded-full bg-cyan-500 text-slate-950 flex items-center justify-center font-black text-[9px]">1</span>Identité</div>
+                    <div class="flex-1 h-px bg-slate-800"></div>
+                    <div id="su-step-2-ind" class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500"><span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-black text-[9px]">2</span>Médical</div>
+                    <div class="flex-1 h-px bg-slate-800"></div>
+                    <div id="su-step-3-ind" class="flex items-center gap-1.5 text-[10px] font-bold text-slate-500"><span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-black text-[9px]">3</span>Sécurité</div>
+                </div>
+
+                <!-- Step 1 -->
+                <div id="su-step-1" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Prénom</label>
+                        <input id="su-firstname" class="w-full p-2.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400" placeholder="Ex: Fatima"></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Nom</label>
+                        <input id="su-lastname" class="w-full p-2.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400" placeholder="Ex: Benali"></div>
+                    </div>
+                    <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">CIN / Carte Nationale</label>
+                    <input id="su-cin" class="w-full p-2.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400 font-mono" placeholder="Ex: AB123456"></div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Date de naissance</label>
+                        <input id="su-dob" type="date" class="w-full p-2.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400"></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Sexe</label>
+                        <select id="su-gender" class="w-full p-2.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400">
+                            <option value="">-- Sélectionner --</option><option value="M">Masculin</option><option value="F">Féminin</option>
+                        </select></div>
+                    </div>
+                    <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Téléphone</label>
+                    <input id="su-phone" type="tel" class="w-full p-2.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400" placeholder="Ex: 0661234567"></div>
+                    <button onclick="goStep(2)" class="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs rounded-xl transition hover:from-cyan-400 hover:to-blue-500">
+                        Continuer <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- Step 2 -->
+                <div id="su-step-2" class="hidden space-y-4">
+                    <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Couverture Médicale</label>
+                    <select id="su-mutuelle" class="w-full p-2.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400">
+                        <option value="CNSS">CNSS / AMO (70%)</option><option value="CNOPS">CNOPS (80%)</option>
+                        <option value="RAMED">AMO Solidaire - RAMED (100%)</option><option value="SANS">Sans couverture</option>
+                    </select></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Groupe Sanguin</label>
+                    <select id="su-blood" class="w-full p-2.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400">
+                        <option value="">-- Sélectionner --</option>
+                        <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                        <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+                    </select></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Antécédents médicaux (optionnel)</label>
+                    <textarea id="su-antecedents" rows="3" class="w-full p-2.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400 resize-none" placeholder="Ex: Diabète type 2, hypertension..."></textarea></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Allergies connues (optionnel)</label>
+                    <input id="su-allergies" class="w-full p-2.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400" placeholder="Ex: Pénicilline, aspirine..."></div>
+                    <div class="flex gap-3">
+                        <button onclick="goStep(1)" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition border border-slate-700"><i class="fa-solid fa-arrow-left mr-1"></i>Retour</button>
+                        <button onclick="goStep(3)" class="flex-1 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs rounded-xl transition hover:from-cyan-400 hover:to-blue-500">Continuer <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div id="su-step-3" class="hidden space-y-4">
+                    <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Adresse E-mail</label>
+                    <div class="relative"><span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 text-xs"><i class="fa-solid fa-envelope"></i></span>
+                    <input id="su-email" type="email" class="w-full pl-9 p-2.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400" placeholder="votre@email.com"></div></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Mot de passe</label>
+                    <div class="relative"><span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 text-xs"><i class="fa-solid fa-lock"></i></span>
+                    <input id="su-pass" type="password" class="w-full pl-9 pr-10 p-2.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400" placeholder="Min. 8 caractères" oninput="checkPassStrength(this.value)">
+                    <button type="button" onclick="togglePassVis('su-pass',this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-300 text-xs"><i class="fa-solid fa-eye"></i></button></div>
+                    <div class="mt-1.5 space-y-1">
+                        <div class="h-1 rounded-full bg-slate-800 overflow-hidden"><div id="pass-strength-bar" class="h-full rounded-full transition-all duration-300 w-0"></div></div>
+                        <p id="pass-strength-label" class="text-[9px] text-slate-500"></p>
+                    </div></div>
+                    <div><label class="text-[10px] font-bold text-slate-400 block mb-1 uppercase tracking-wider">Confirmer le mot de passe</label>
+                    <div class="relative"><span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 text-xs"><i class="fa-solid fa-lock"></i></span>
+                    <input id="su-pass-confirm" type="password" class="w-full pl-9 p-2.5 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:ring-1 focus:ring-cyan-400" placeholder="Répétez le mot de passe">
+                    <button type="button" onclick="togglePassVis('su-pass-confirm',this)" class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 hover:text-slate-300 text-xs"><i class="fa-solid fa-eye"></i></button></div></div>
+                    <div class="flex items-start gap-2 p-3 bg-slate-900/60 rounded-lg border border-slate-800">
+                        <input type="checkbox" id="su-terms" class="mt-0.5 accent-cyan-400">
+                        <label for="su-terms" class="text-[10px] text-slate-400 cursor-pointer">J'accepte les <span class="text-cyan-400">conditions d'utilisation</span> et la <span class="text-cyan-400">politique de confidentialité</span> de H-Ai.</label>
+                    </div>
+                    <p id="signup-error" class="hidden text-center text-xs text-rose-400 font-semibold"></p>
+                    <div class="flex gap-3">
+                        <button onclick="goStep(2)" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition border border-slate-700"><i class="fa-solid fa-arrow-left mr-1"></i>Retour</button>
+                        <button onclick="handleSignup()" class="flex-1 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-xs rounded-xl transition shadow-lg">
+                            <i class="fa-solid fa-user-plus mr-1"></i>Créer mon compte
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <p class="text-center text-xs text-slate-500">Déjà un compte ? <a href="/" class="text-cyan-400 font-bold hover:text-cyan-300 transition">Se connecter</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+let currentStep = 1;
+function goStep(step) {
+    if (step > currentStep && currentStep === 1) {
+        const fn=document.getElementById('su-firstname').value.trim();
+        const ln=document.getElementById('su-lastname').value.trim();
+        const cin=document.getElementById('su-cin').value.trim();
+        const dob=document.getElementById('su-dob').value;
+        const gender=document.getElementById('su-gender').value;
+        const phone=document.getElementById('su-phone').value.trim();
+        if (!fn||!ln||!cin||!dob||!gender||!phone) { triggerCustomToast('Champs manquants','Veuillez remplir toutes les informations.','warning'); return; }
+    }
+    currentStep = step;
+    [1,2,3].forEach(s => {
+        document.getElementById('su-step-'+s).classList.toggle('hidden', s!==step);
+        const ind=document.getElementById('su-step-'+s+'-ind');
+        const span=ind.querySelector('span');
+        if (s < step) {
+            ind.className='flex items-center gap-1.5 text-[10px] font-bold text-emerald-400';
+            span.className='w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black text-[9px]';
+            span.innerHTML='<i class="fa-solid fa-check text-[8px]"></i>';
+        } else if (s === step) {
+            ind.className='flex items-center gap-1.5 text-[10px] font-bold text-cyan-400';
+            span.className='w-5 h-5 rounded-full bg-cyan-500 text-slate-950 flex items-center justify-center font-black text-[9px]';
+            span.textContent=s;
+        } else {
+            ind.className='flex items-center gap-1.5 text-[10px] font-bold text-slate-500';
+            span.className='w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-black text-[9px]';
+            span.textContent=s;
+        }
+    });
+}
+
+function checkPassStrength(val) {
+    let score=0;
+    if(val.length>=8) score++; if(/[A-Z]/.test(val)) score++; if(/[0-9]/.test(val)) score++; if(/[^A-Za-z0-9]/.test(val)) score++;
+    const levels=[{w:'0%',color:'',text:''},{w:'25%',color:'bg-rose-500',text:'Très faible'},{w:'50%',color:'bg-amber-500',text:'Faible'},{w:'75%',color:'bg-yellow-400',text:'Bon'},{w:'100%',color:'bg-emerald-500',text:'Excellent ✓'}];
+    const l=levels[score];
+    const bar=document.getElementById('pass-strength-bar'), lbl=document.getElementById('pass-strength-label');
+    bar.style.width=l.w; bar.className=`h-full rounded-full transition-all duration-300 ${l.color}`;
+    lbl.textContent=l.text; lbl.className=`text-[9px] ${score>=3?'text-emerald-400':score>=2?'text-amber-400':'text-rose-400'}`;
+}
+
+function togglePassVis(id, btn) {
+    const inp=document.getElementById(id);
+    inp.type=inp.type==='password'?'text':'password';
+    btn.innerHTML=inp.type==='text'?'<i class="fa-solid fa-eye-slash"></i>':'<i class="fa-solid fa-eye"></i>';
+}
+
+async function handleSignup() {
+    const email=document.getElementById('su-email').value.trim().toLowerCase();
+    const pass=document.getElementById('su-pass').value;
+    const passConfirm=document.getElementById('su-pass-confirm').value;
+    const terms=document.getElementById('su-terms').checked;
+    const errEl=document.getElementById('signup-error');
+    errEl.classList.add('hidden');
+    if (!email||!pass||!passConfirm){errEl.textContent='Remplissez tous les champs.';errEl.classList.remove('hidden');return;}
+    if (pass!==passConfirm){errEl.textContent='Les mots de passe ne correspondent pas.';errEl.classList.remove('hidden');return;}
+    if (pass.length<8){errEl.textContent='Mot de passe trop court (min. 8 caractères).';errEl.classList.remove('hidden');return;}
+    if (!terms){errEl.textContent='Acceptez les conditions d\'utilisation.';errEl.classList.remove('hidden');return;}
+    const payload={
+        firstname: document.getElementById('su-firstname').value.trim(),
+        lastname:  document.getElementById('su-lastname').value.trim(),
+        email, password: pass,
+        cin:        document.getElementById('su-cin').value.trim(),
+        dob:        document.getElementById('su-dob').value,
+        gender:     document.getElementById('su-gender').value,
+        phone:      document.getElementById('su-phone').value.trim(),
+        mutuelle:   document.getElementById('su-mutuelle').value,
+        blood:      document.getElementById('su-blood').value,
+        antecedents: document.getElementById('su-antecedents').value.trim(),
+        allergies:   document.getElementById('su-allergies').value.trim()
+    };
+    const res=await fetch('/api/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await res.json();
+    if (data.ok) {
+        triggerCustomToast('Compte Créé !','Connectez-vous avec vos identifiants.','success');
+        setTimeout(()=>window.location.href='/',1200);
+    } else {
+        errEl.textContent=data.error||'Erreur lors de la création.';
+        errEl.classList.remove('hidden');
+    }
+}
+{% endblock %}
