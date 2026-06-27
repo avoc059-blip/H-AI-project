@@ -1,0 +1,120 @@
+{% extends "layout.html" %}
+{% block title %}Pharmacie{% endblock %}
+{% block page_title %}Pharmacie & Médicaments{% endblock %}
+{% block page_subtitle %}Posologies et suivi de stock{% endblock %}
+{% set active = 'pharmacy' %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
+        <div>
+            <h3 class="text-lg font-bold text-white">Pharmacie & Explication des Médicaments</h3>
+            <p class="text-xs text-slate-400">Recherchez un médicament et consultez sa posologie, son explication et son état de stock.</p>
+        </div>
+        <input type="text" id="medicine-search" oninput="searchMedicines()" class="p-2 bg-slate-900 border border-slate-800 rounded-lg text-xs w-64 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-400" placeholder="Rechercher (Ex: Doliprane...)">
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4" id="medicine-list-container"></div>
+        <div class="lg:col-span-4 sticky top-20">
+            <div id="medicine-panel" class="glass-card p-6 rounded-2xl border border-slate-800 shadow-2xl">
+                <div class="text-center py-8 space-y-3">
+                    <div class="w-16 h-16 mx-auto rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-teal-400 text-2xl"><i class="fa-solid fa-pills"></i></div>
+                    <h4 class="text-sm font-bold text-slate-400">Sélectionnez un médicament</h4>
+                    <p class="text-[11px] text-slate-500">Consultez la posologie complète, les indications et l'état du stock.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+let allMeds = [];
+
+const MED_COLORS = {
+    'Antalgique':'#F59E0B','Antibiotique':'#3B82F6','Antidiabétique':'#10B981',
+    'Hypolipémiant':'#8B5CF6','Anti-acide':'#06B6D4','Anti-inflammatoire':'#EF4444',
+    'Antihypertenseur':'#6366F1','Bronchodilatateur':'#14B8A6','Anxiolytique':'#F43F5E',
+    'Supplément':'#D97706','Insuline':'#0EA5E9','default':'#64748B'
+};
+
+function getMedColor(type) {
+    const key = Object.keys(MED_COLORS).find(k => type && type.includes(k));
+    return key ? MED_COLORS[key] : MED_COLORS.default;
+}
+
+function getStockStatus(stock) {
+    if (stock > 100) return { label:'En stock', cls:'text-emerald-400 bg-emerald-500/10' };
+    if (stock > 30)  return { label:'Stock modéré', cls:'text-yellow-400 bg-yellow-500/10' };
+    return { label:'Stock faible', cls:'text-rose-400 bg-rose-500/10' };
+}
+
+async function loadMedicines(q='') {
+    const url = q ? `/api/medicines?q=${encodeURIComponent(q)}` : '/api/medicines';
+    allMeds = await fetch(url).then(r=>r.json());
+    renderMedicines(allMeds);
+}
+
+function renderMedicines(meds) {
+    const container = document.getElementById('medicine-list-container');
+    if (meds.length === 0) { container.innerHTML = '<p class="text-slate-500 text-sm col-span-2 text-center py-12">Aucun médicament trouvé.</p>'; return; }
+    container.innerHTML = meds.map(m => {
+        const color = getMedColor(m.type);
+        const stock = getStockStatus(m.stock);
+        return `<div onclick="showMed(${m.id})" class="glass-card p-4 rounded-2xl border border-slate-800 hover:border-teal-400/30 transition cursor-pointer fade-in group">
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex-1">
+                    <h4 class="text-sm font-bold text-white group-hover:text-teal-400 transition leading-tight">${m.name}</h4>
+                    <p class="text-[11px] text-slate-400 mt-0.5">${m.type || ''}</p>
+                </div>
+                <span class="ml-2 px-2 py-0.5 rounded-full text-[9px] font-bold ${stock.cls}">${stock.label}</span>
+            </div>
+            <div class="flex items-center justify-between text-xs pt-3 border-t border-slate-800">
+                <span class="text-slate-400"><i class="fa-solid fa-box mr-1 text-[10px]"></i>${m.stock} unités</span>
+                <span class="font-mono text-[10px] text-slate-500">${m.mutuelle}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function showMed(id) {
+    const m = allMeds.find(x => x.id === id); if (!m) return;
+    const stock = getStockStatus(m.stock);
+    document.getElementById('medicine-panel').innerHTML = `
+        <div class="space-y-4 fade-in">
+            <div class="flex items-center justify-between">
+                <h3 class="text-base font-bold text-white leading-tight">${m.name}</h3>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${stock.cls}">${stock.label}</span>
+            </div>
+            <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-400">
+                <span class="font-bold text-teal-400 block mb-1">Type</span>${m.type || '—'}
+            </div>
+            <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed">
+                <span class="font-bold text-white block mb-1">📋 Explication</span>${m.explanation || '—'}
+            </div>
+            <div class="p-3 bg-cyan-500/5 rounded-xl border border-cyan-500/20 text-xs text-slate-300">
+                <span class="font-bold text-cyan-400 block mb-1">💊 Posologie</span>${m.posologie || '—'}
+            </div>
+            <div class="flex items-center justify-between text-xs p-3 bg-slate-900/40 rounded-xl border border-slate-800">
+                <span class="text-slate-400">Stock disponible</span>
+                <span class="font-bold text-white">${m.stock} unités</span>
+            </div>
+            <div class="flex items-center justify-between text-xs p-3 bg-slate-900/40 rounded-xl border border-slate-800">
+                <span class="text-slate-400">Couverture</span>
+                <span class="font-bold text-amber-400">${m.mutuelle}</span>
+            </div>
+        </div>`;
+}
+
+function searchMedicines() {
+    const q = document.getElementById('medicine-search').value.trim();
+    if (q.length === 0) { renderMedicines(allMeds); return; }
+    const filtered = allMeds.filter(m => m.name.toLowerCase().includes(q.toLowerCase()));
+    renderMedicines(filtered);
+}
+
+loadMedicines();
+</script>
+{% endblock %}

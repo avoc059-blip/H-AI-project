@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}H-Ai{% endblock %} — Plateforme Hospitalière Intelligente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: { extend: {
+                fontFamily: { sans: ['Plus Jakarta Sans','sans-serif'], comfortaa: ['Comfortaa','sans-serif'] },
+                colors: { darkbg:'#040712', darkcard:'#0c1122', hblue:'#1E3A8A', hgold:'#D4AF37', hcyan:'#00F2FE', hpink:'#F43F5E' }
+            }}
+        }
+    </script>
+    <style>
+        body { background-color:#03050c; font-family:'Plus Jakarta Sans',sans-serif; overflow-x:hidden; }
+        .neon-border { box-shadow:0 0 15px rgba(0,242,254,.25); border:1px solid rgba(0,242,254,.3); }
+        .glass-card { background:rgba(12,18,36,.9); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,.05); }
+        ::-webkit-scrollbar { width:6px; }
+        ::-webkit-scrollbar-track { background:#060913; }
+        ::-webkit-scrollbar-thumb { background:#1E293B; border-radius:3px; }
+        ::-webkit-scrollbar-thumb:hover { background:#00F2FE; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .fade-in { animation:fadeIn .4s ease forwards; }
+        {% block extra_styles %}{% endblock %}
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen">
+
+<!-- TOAST -->
+<div id="custom-toast" class="fixed top-6 right-6 z-[100] transform translate-x-40 opacity-0 transition-all duration-500 ease-out flex items-center gap-3 p-4 rounded-2xl glass-card border border-amber-500/30 max-w-sm pointer-events-auto shadow-2xl">
+    <div id="toast-icon" class="w-10 h-10 rounded-xl flex items-center justify-center text-lg"></div>
+    <div><h5 class="font-bold text-xs text-white uppercase tracking-wider">H-Ai Alert</h5>
+    <p id="toast-message" class="text-xs text-slate-300 mt-0.5 leading-snug"></p></div>
+    <button onclick="dismissToast()" class="ml-auto text-slate-500 hover:text-white transition text-xs pl-2"><i class="fa-solid fa-xmark"></i></button>
+</div>
+
+{% block body %}{% endblock %}
+
+<script>
+// ── TOAST ──
+let toastTimer = null;
+function triggerCustomToast(title, msg, type='info') {
+    const t=document.getElementById('custom-toast');
+    const icons={success:'✅',warning:'⚠️',error:'❌',info:'ℹ️'};
+    document.getElementById('toast-icon').innerText=icons[type]||'ℹ️';
+    document.getElementById('toast-message').innerText=msg;
+    t.style.transform='translateX(0)'; t.style.opacity='1';
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>dismissToast(),4000);
+}
+function dismissToast() {
+    const t=document.getElementById('custom-toast');
+    t.style.transform='translateX(160px)'; t.style.opacity='0';
+}
+{% block extra_scripts %}{% endblock %}
+</script>
+</body>
+</html>

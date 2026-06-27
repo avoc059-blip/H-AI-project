@@ -1,0 +1,376 @@
+{% extends "layout.html" %}
+{% block title %}Dossier Patient{% endblock %}
+{% block page_title %}Dossier Médical{% endblock %}
+{% block page_subtitle %}Fiche complète du patient{% endblock %}
+{% set active = 'patients' %}
+
+{% block content %}
+<div class="space-y-6" id="dossier-root">
+    <!-- Loading -->
+    <div id="loading-state" class="text-center py-20 text-slate-500 text-sm">
+        <i class="fa-solid fa-spinner fa-spin text-cyan-400 text-2xl mb-3 block"></i>
+        Chargement du dossier...
+    </div>
+
+    <!-- Content (hidden until loaded) -->
+    <div id="dossier-content" class="hidden space-y-6">
+
+        <!-- Back + Header -->
+        <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <button onclick="history.back()" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-400/40 flex items-center justify-center text-slate-400 hover:text-cyan-400 transition">
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                </button>
+                <div>
+                    <h3 id="pat-fullname" class="text-xl font-bold text-white"></h3>
+                    <p id="pat-subtitle" class="text-xs text-slate-400 mt-0.5"></p>
+                </div>
+            </div>
+            <!-- BOUTON TIKENTER -->
+            <button onclick="openTikenter()" class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-purple-900/40">
+                <i class="fa-solid fa-brain"></i>
+                <span>Analyser avec l'IA</span>
+            </button>
+        </div>
+
+        <!-- Identity Card -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <!-- Left: Identity -->
+            <div class="xl:col-span-1 space-y-4">
+                <!-- Avatar + vitals -->
+                <div class="glass-card p-6 rounded-2xl border border-slate-800 text-center space-y-4">
+                    <div id="pat-avatar" class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-cyan-500/30 to-blue-600/30 border border-cyan-500/20 flex items-center justify-center font-bold text-cyan-300 text-2xl"></div>
+                    <div>
+                        <p id="pat-name-card" class="font-bold text-white text-lg"></p>
+                        <p id="pat-id-card" class="text-xs text-slate-500 font-mono mt-0.5"></p>
+                    </div>
+                    <div class="flex justify-center gap-3 flex-wrap">
+                        <span id="pat-blood-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-red-500/20 text-red-400 hidden"></span>
+                        <span id="pat-mut-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400"></span>
+                        <span id="pat-gender-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-300"></span>
+                    </div>
+                </div>
+
+                <!-- Contact info -->
+                <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Coordonnées</h4>
+                    <div id="contact-list" class="space-y-2.5 text-[11px]"></div>
+                </div>
+            </div>
+
+            <!-- Right: Medical info -->
+            <div class="xl:col-span-2 space-y-4">
+                <!-- Antécédents & Allergies -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="glass-card p-5 rounded-2xl border border-amber-500/20 space-y-3">
+                        <h4 class="text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Antécédents Médicaux
+                        </h4>
+                        <p id="pat-antecedents" class="text-[11px] text-slate-300 leading-relaxed"></p>
+                    </div>
+                    <div class="glass-card p-5 rounded-2xl border border-red-500/20 space-y-3">
+                        <h4 class="text-xs font-bold text-red-400 uppercase tracking-widest flex items-center gap-2">
+                            <i class="fa-solid fa-skull-crossbones"></i> Allergies Connues
+                        </h4>
+                        <p id="pat-allergies" class="text-[11px] text-slate-300 leading-relaxed"></p>
+                    </div>
+                </div>
+
+                <!-- Infos admin -->
+                <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Informations Administratives</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-[11px]" id="admin-info-grid"></div>
+                </div>
+
+                <!-- Rendez-vous -->
+                <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fa-solid fa-calendar-check text-emerald-400"></i> Historique des Rendez-vous
+                    </h4>
+                    <div id="appointments-list" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error state -->
+    <div id="error-state" class="hidden text-center py-20 space-y-3">
+        <div class="w-16 h-16 mx-auto rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 text-2xl">
+            <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <p class="text-slate-400 font-semibold text-sm">Dossier introuvable</p>
+        <button onclick="history.back()" class="text-xs text-cyan-400 hover:underline">← Retour à la liste</button>
+    </div>
+</div>
+
+<!-- ═══ MODAL TIKENTER ═══ -->
+<div id="tikenter-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+    <div class="glass-card rounded-3xl border border-violet-500/30 p-8 w-full max-w-2xl shadow-2xl shadow-purple-900/30 space-y-5 relative mx-4 max-h-[90vh] overflow-y-auto">
+        <!-- Close -->
+        <button onclick="closeTikenter()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+            <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+
+        <!-- Header -->
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center">
+                <i class="fa-solid fa-brain text-white text-sm"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-white">Analyse IA — Tikenter</h3>
+                <p class="text-[11px] text-slate-400">Analyse clinique intelligente du dossier patient</p>
+            </div>
+        </div>
+
+        <!-- Idle state -->
+        <div id="tik-idle" class="space-y-4">
+            <div class="p-4 bg-violet-950/30 border border-violet-500/20 rounded-xl text-[11px] text-slate-300 leading-relaxed">
+                <i class="fa-solid fa-circle-info text-violet-400 mr-2"></i>
+                L'IA va analyser le profil complet du patient : antécédents, allergies, historique des rendez-vous, groupe sanguin et couverture mutuelle pour générer un résumé clinique structuré.
+            </div>
+            <button onclick="runTikenter()" class="w-full py-3 bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-500 hover:to-purple-600 text-white font-black rounded-xl transition text-sm flex items-center justify-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Lancer l'analyse IA
+            </button>
+        </div>
+
+        <!-- Loading state -->
+        <div id="tik-loading" class="hidden text-center py-10 space-y-4">
+            <div class="w-16 h-16 mx-auto rounded-full bg-violet-500/10 border border-violet-500/30 flex items-center justify-center">
+                <i class="fa-solid fa-brain text-violet-400 text-2xl animate-pulse"></i>
+            </div>
+            <div>
+                <p class="text-slate-300 font-semibold text-sm">Analyse en cours...</p>
+                <p class="text-slate-500 text-xs mt-1">L'IA examine le dossier médical</p>
+            </div>
+            <div class="flex justify-center gap-1">
+                <span class="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style="animation-delay:0ms"></span>
+                <span class="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style="animation-delay:150ms"></span>
+                <span class="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style="animation-delay:300ms"></span>
+            </div>
+        </div>
+
+        <!-- Result state -->
+        <div id="tik-result" class="hidden space-y-4">
+            <div class="flex items-center gap-2 text-emerald-400 text-xs font-semibold">
+                <i class="fa-solid fa-circle-check"></i> Analyse générée avec succès
+            </div>
+            <div id="tik-output" class="p-5 bg-slate-900/80 border border-slate-700 rounded-xl text-[12px] text-slate-200 leading-relaxed whitespace-pre-wrap font-mono"></div>
+            <div class="flex gap-3">
+                <button onclick="copyAnalyse()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-copy"></i> Copier
+                </button>
+                <button onclick="runTikenter()" class="flex-1 py-2.5 bg-violet-900/40 hover:bg-violet-900/60 border border-violet-500/30 text-violet-300 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-right"></i> Relancer
+                </button>
+            </div>
+        </div>
+
+        <!-- Error state -->
+        <div id="tik-error" class="hidden p-4 bg-red-950/30 border border-red-500/20 rounded-xl space-y-2">
+            <p class="text-red-400 text-xs font-bold flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> Erreur</p>
+            <p id="tik-error-msg" class="text-slate-400 text-[11px]"></p>
+            <p class="text-slate-500 text-[10px]">Vérifiez que <code class="text-yellow-400">ANTHROPIC_API_KEY</code> est défini dans votre fichier <code class="text-yellow-400">.env</code></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+const patientId = window.location.pathname.split('/').pop();
+
+const BLOOD_COLORS = {
+    'A+':'bg-red-500/20 text-red-400','A-':'bg-red-500/20 text-red-300',
+    'B+':'bg-orange-500/20 text-orange-400','B-':'bg-orange-500/20 text-orange-300',
+    'AB+':'bg-purple-500/20 text-purple-400','AB-':'bg-purple-500/20 text-purple-300',
+    'O+':'bg-blue-500/20 text-blue-400','O-':'bg-blue-500/20 text-blue-300'
+};
+const MUT_COLORS = {
+    'CNSS':'bg-cyan-500/20 text-cyan-400',
+    'CNOPS':'bg-indigo-500/20 text-indigo-400',
+    'RAMED':'bg-emerald-500/20 text-emerald-400'
+};
+const STATUS_COLORS = {
+    'Confirmé':'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    'En attente':'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    'Annulé':'bg-red-500/20 text-red-400 border-red-500/30'
+};
+const PRIORITY_COLORS = {
+    'Urgente':'text-red-400','Haute':'text-orange-400',
+    'Standard':'text-slate-400','Basse':'text-slate-500'
+};
+
+async function loadDossier() {
+    try {
+        const [patRes, apptRes] = await Promise.all([
+            fetch(`/api/patients/${patientId}`),
+            fetch('/api/appointments')
+        ]);
+        if (!patRes.ok) { showError(); return; }
+        const p = await patRes.json();
+        const appts = apptRes.ok ? (await apptRes.json()) : [];
+        renderDossier(p, appts.filter(a => a.patient_id === p.id || a.patient_name === `${p.firstname} ${p.lastname}`));
+    } catch(e) { showError(); }
+}
+
+function renderDossier(p, appts) {
+    const initials = (p.firstname[0]||'') + (p.lastname[0]||'');
+    const age = p.dob ? (new Date().getFullYear() - new Date(p.dob).getFullYear()) : '—';
+    const dobFormatted = p.dob ? new Date(p.dob).toLocaleDateString('fr-FR') : '—';
+    const genderLabel = p.gender === 'F' ? '♀ Féminin' : '♂ Masculin';
+    const mutClass = MUT_COLORS[p.mutuelle] || 'bg-slate-700 text-slate-400';
+    const bloodClass = BLOOD_COLORS[p.blood] || '';
+
+    // Header
+    document.getElementById('pat-fullname').textContent = `${p.firstname} ${p.lastname}`;
+    document.getElementById('pat-subtitle').textContent = `${p.id} · ${age} ans · Inscrit le ${p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR') : '—'}`;
+
+    // Avatar card
+    document.getElementById('pat-avatar').textContent = initials;
+    document.getElementById('pat-name-card').textContent = `${p.firstname} ${p.lastname}`;
+    document.getElementById('pat-id-card').textContent = p.id;
+    if (p.blood) {
+        const bb = document.getElementById('pat-blood-badge');
+        bb.className = `text-xs font-bold px-3 py-1 rounded-full ${bloodClass}`;
+        bb.textContent = p.blood;
+        bb.classList.remove('hidden');
+    }
+    const mb = document.getElementById('pat-mut-badge');
+    mb.className = `text-xs font-bold px-3 py-1 rounded-full ${mutClass}`;
+    mb.textContent = p.mutuelle || 'CNSS';
+    document.getElementById('pat-gender-badge').textContent = genderLabel;
+
+    // Contact
+    const contactItems = [
+        { icon:'fa-envelope', val: p.email || '—', color:'text-slate-500' },
+        { icon:'fa-phone', val: p.phone || '—', color:'text-slate-500' },
+        { icon:'fa-id-card', val: p.cin || '—', color:'text-slate-500' },
+    ];
+    document.getElementById('contact-list').innerHTML = contactItems.map(c => `
+        <div class="flex items-center gap-2 text-slate-400">
+            <i class="fa-solid ${c.icon} ${c.color} w-3 text-center"></i>
+            <span>${c.val}</span>
+        </div>`).join('');
+
+    // Antécédents & Allergies
+    document.getElementById('pat-antecedents').textContent =
+        (p.antecedents && p.antecedents.trim()) ? p.antecedents : 'Aucun antécédent renseigné.';
+    document.getElementById('pat-allergies').textContent =
+        (p.allergies && p.allergies.trim()) ? p.allergies : 'Aucune allergie connue.';
+
+    // Admin grid
+    const adminFields = [
+        { label:'Date de naissance', val: dobFormatted, icon:'fa-cake-candles' },
+        { label:'Âge', val: age + ' ans', icon:'fa-hourglass-half' },
+        { label:'Groupe sanguin', val: p.blood || '—', icon:'fa-droplet' },
+        { label:'Mutuelle', val: p.mutuelle || '—', icon:'fa-shield-halved' },
+        { label:'Genre', val: genderLabel, icon:'fa-person' },
+        { label:'Inscrit le', val: p.created_at ? new Date(p.created_at).toLocaleDateString('fr-FR') : '—', icon:'fa-calendar-plus' },
+    ];
+    document.getElementById('admin-info-grid').innerHTML = adminFields.map(f => `
+        <div class="space-y-1">
+            <p class="text-slate-600 flex items-center gap-1.5"><i class="fa-solid ${f.icon} w-3 text-center"></i>${f.label}</p>
+            <p class="font-semibold text-slate-200">${f.val}</p>
+        </div>`).join('');
+
+    // Appointments
+    const apptContainer = document.getElementById('appointments-list');
+    if (!appts.length) {
+        apptContainer.innerHTML = '<p class="text-slate-500 text-xs text-center py-4">Aucun rendez-vous enregistré pour ce patient.</p>';
+    } else {
+        apptContainer.innerHTML = appts.map(a => {
+            const stClass = STATUS_COLORS[a.status] || 'bg-slate-700 text-slate-400 border-slate-600';
+            const prClass = PRIORITY_COLORS[a.priority] || 'text-slate-400';
+            const docName = (a.firstname && a.lastname) ? `Dr. ${a.firstname} ${a.lastname}` : '—';
+            return `
+            <div class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 text-[11px]">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center">
+                        <i class="fa-solid fa-stethoscope text-slate-500 text-xs"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-slate-200">${docName}</p>
+                        <p class="text-slate-500">${a.appt_date || '—'} à ${a.appt_time || '—'}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 text-right">
+                    <div>
+                        <span class="block font-bold ${prClass}">${a.priority || '—'}</span>
+                        <span class="text-slate-500">${a.patient_share || '—'} patient</span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full border text-[10px] font-bold ${stClass}">${a.status || '—'}</span>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // Show content
+    document.getElementById('loading-state').classList.add('hidden');
+    document.getElementById('dossier-content').classList.remove('hidden');
+}
+
+function showError() {
+    document.getElementById('loading-state').classList.add('hidden');
+    document.getElementById('error-state').classList.remove('hidden');
+}
+
+loadDossier();
+
+// ── TIKENTER ──────────────────────────────────────────────
+function openTikenter() {
+    document.getElementById('tikenter-modal').classList.remove('hidden');
+    // reset to idle
+    document.getElementById('tik-idle').classList.remove('hidden');
+    document.getElementById('tik-loading').classList.add('hidden');
+    document.getElementById('tik-result').classList.add('hidden');
+    document.getElementById('tik-error').classList.add('hidden');
+}
+
+function closeTikenter() {
+    document.getElementById('tikenter-modal').classList.add('hidden');
+}
+
+// Close on backdrop click
+document.getElementById('tikenter-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeTikenter();
+});
+
+async function runTikenter() {
+    // Show loading
+    document.getElementById('tik-idle').classList.add('hidden');
+    document.getElementById('tik-result').classList.add('hidden');
+    document.getElementById('tik-error').classList.add('hidden');
+    document.getElementById('tik-loading').classList.remove('hidden');
+
+    try {
+        const res = await fetch('/api/tikenter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ patient_id: patientId })
+        });
+        const data = await res.json();
+        document.getElementById('tik-loading').classList.add('hidden');
+
+        if (data.ok) {
+            document.getElementById('tik-output').textContent = data.analyse;
+            document.getElementById('tik-result').classList.remove('hidden');
+        } else {
+            document.getElementById('tik-error-msg').textContent = data.error || 'Erreur inconnue';
+            document.getElementById('tik-error').classList.remove('hidden');
+            document.getElementById('tik-idle').classList.remove('hidden');
+        }
+    } catch(e) {
+        document.getElementById('tik-loading').classList.add('hidden');
+        document.getElementById('tik-error-msg').textContent = 'Impossible de joindre le serveur Flask.';
+        document.getElementById('tik-error').classList.remove('hidden');
+        document.getElementById('tik-idle').classList.remove('hidden');
+    }
+}
+
+async function copyAnalyse() {
+    const text = document.getElementById('tik-output').textContent;
+    await navigator.clipboard.writeText(text);
+    triggerCustomToast('Copié !', 'Analyse copiée dans le presse-papiers.', 'success');
+}
+</script>
+{% endblock %}

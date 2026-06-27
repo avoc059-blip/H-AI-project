@@ -1,0 +1,167 @@
+{% extends "layout.html" %}
+{% block title %}Dossiers Patients{% endblock %}
+{% block page_title %}Dossiers Patients{% endblock %}
+{% block page_subtitle %}Consultation et gestion des dossiers médicaux{% endblock %}
+{% set active = 'patients' %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Toolbar -->
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                <input id="search-input" oninput="filterPatients()" type="text"
+                    placeholder="Rechercher nom, CIN, email..."
+                    class="pl-8 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-400 w-60">
+            </div>
+            <select id="filter-mutuelle" onchange="filterPatients()" class="px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-400">
+                <option value="">Toutes les mutuelles</option>
+                <option value="CNSS">CNSS</option>
+                <option value="CNOPS">CNOPS</option>
+                <option value="RAMED">RAMED</option>
+            </select>
+            <select id="filter-gender" onchange="filterPatients()" class="px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-400">
+                <option value="">Tous les genres</option>
+                <option value="M">Masculin</option>
+                <option value="F">Féminin</option>
+            </select>
+        </div>
+        <span id="patients-count" class="text-xs text-slate-500 font-medium"></span>
+    </div>
+
+    <!-- Grid -->
+    <div id="patients-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"></div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="hidden text-center py-20 space-y-3">
+        <div class="w-20 h-20 mx-auto rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 text-3xl">
+            <i class="fa-solid fa-user-xmark"></i>
+        </div>
+        <p class="text-slate-400 font-semibold text-sm">Aucun patient trouvé</p>
+        <p class="text-slate-600 text-xs">Modifiez vos critères de recherche.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+let allPatients = [];
+
+async function loadPatients() {
+    try {
+        const res = await fetch('/api/patients');
+        if (!res.ok) { showError(); return; }
+        allPatients = await res.json();
+        renderPatients(allPatients);
+    } catch(e) { showError(); }
+}
+
+function showError() {
+    document.getElementById('patients-container').innerHTML =
+        '<p class="text-red-400 text-sm col-span-3 text-center py-12">Erreur de chargement des dossiers.</p>';
+}
+
+function filterPatients() {
+    const q = document.getElementById('search-input').value.toLowerCase();
+    const mut = document.getElementById('filter-mutuelle').value;
+    const gen = document.getElementById('filter-gender').value;
+    const filtered = allPatients.filter(p => {
+        const name = `${p.firstname} ${p.lastname}`.toLowerCase();
+        const matchQ = !q || name.includes(q) || (p.cin||'').toLowerCase().includes(q) || (p.email||'').toLowerCase().includes(q);
+        const matchM = !mut || p.mutuelle === mut;
+        const matchG = !gen || p.gender === gen;
+        return matchQ && matchM && matchG;
+    });
+    renderPatients(filtered);
+}
+
+function renderPatients(patients) {
+    const container = document.getElementById('patients-container');
+    const empty = document.getElementById('empty-state');
+    const countEl = document.getElementById('patients-count');
+    if (countEl) countEl.textContent = `${patients.length} patient(s)`;
+
+    if (!patients.length) {
+        container.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+    }
+    empty.classList.add('hidden');
+
+    const BLOOD_COLORS = {
+        'A+':'bg-red-500/20 text-red-400','A-':'bg-red-500/20 text-red-300',
+        'B+':'bg-orange-500/20 text-orange-400','B-':'bg-orange-500/20 text-orange-300',
+        'AB+':'bg-purple-500/20 text-purple-400','AB-':'bg-purple-500/20 text-purple-300',
+        'O+':'bg-blue-500/20 text-blue-400','O-':'bg-blue-500/20 text-blue-300'
+    };
+    const MUT_COLORS = {
+        'CNSS':'bg-cyan-500/20 text-cyan-400',
+        'CNOPS':'bg-indigo-500/20 text-indigo-400',
+        'RAMED':'bg-emerald-500/20 text-emerald-400'
+    };
+
+    container.innerHTML = patients.map(p => {
+        const initials = (p.firstname[0]||'') + (p.lastname[0]||'');
+        const age = p.dob ? (new Date().getFullYear() - new Date(p.dob).getFullYear()) : '—';
+        const genderIcon = p.gender === 'F' ? 'fa-venus text-pink-400' : 'fa-mars text-blue-400';
+        const bloodClass = BLOOD_COLORS[p.blood] || 'bg-slate-700 text-slate-400';
+        const mutClass = MUT_COLORS[p.mutuelle] || 'bg-slate-700 text-slate-400';
+        const hasAntecedents = p.antecedents && p.antecedents.trim() !== '';
+        const hasAllergies = p.allergies && p.allergies.trim() !== '';
+
+        return `
+        <div onclick="window.location.href='/dossier/${p.id}'"
+             class="glass-card p-5 rounded-2xl border border-slate-800 hover:border-cyan-400/40 transition cursor-pointer fade-in group hover:shadow-lg hover:shadow-cyan-500/5">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-500/30 to-blue-600/30 border border-cyan-500/20 flex items-center justify-center font-bold text-cyan-300 text-sm">
+                        ${initials}
+                    </div>
+                    <div>
+                        <p class="font-bold text-white text-sm group-hover:text-cyan-300 transition">${p.firstname} ${p.lastname}</p>
+                        <p class="text-[10px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                            <i class="fa-solid ${genderIcon}"></i>
+                            <span>${age} ans</span>
+                            <span class="text-slate-700">·</span>
+                            <span class="text-slate-400">${p.id}</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    ${p.blood ? `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${bloodClass}">${p.blood}</span>` : ''}
+                    <i class="fa-solid fa-chevron-right text-slate-600 group-hover:text-cyan-400 transition text-xs"></i>
+                </div>
+            </div>
+
+            <div class="space-y-2 text-[11px]">
+                <div class="flex items-center gap-2 text-slate-400">
+                    <i class="fa-solid fa-envelope text-slate-600 w-3"></i>
+                    <span class="truncate">${p.email}</span>
+                </div>
+                ${p.phone ? `<div class="flex items-center gap-2 text-slate-400">
+                    <i class="fa-solid fa-phone text-slate-600 w-3"></i>
+                    <span>${p.phone}</span>
+                </div>` : ''}
+                <div class="flex items-center gap-2 text-slate-400">
+                    <i class="fa-solid fa-id-card text-slate-600 w-3"></i>
+                    <span>${p.cin || 'CIN non renseigné'}</span>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+                <span class="text-[10px] font-semibold px-2.5 py-1 rounded-full ${mutClass}">${p.mutuelle || 'CNSS'}</span>
+                <div class="flex items-center gap-2">
+                    ${hasAntecedents ? '<span title="Antécédents médicaux" class="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation text-amber-400 text-[9px]"></i></span>' : ''}
+                    ${hasAllergies ? '<span title="Allergies" class="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center"><i class="fa-solid fa-skull-crossbones text-red-400 text-[9px]"></i></span>' : ''}
+                    <span class="text-[10px] text-slate-600">Voir dossier <i class="fa-solid fa-arrow-right ml-1"></i></span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+loadPatients();
+</script>
+{% endblock %}

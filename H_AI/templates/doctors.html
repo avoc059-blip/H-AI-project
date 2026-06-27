@@ -1,0 +1,176 @@
+{% extends "layout.html" %}
+{% block title %}Gestion Médecins{% endblock %}
+{% block page_title %}Gestion Médecins{% endblock %}
+{% block page_subtitle %}Astreintes et planning d'équipe{% endblock %}
+{% set active = 'doctors' %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Toolbar -->
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
+        <div class="flex flex-wrap items-center gap-2">
+            <button onclick="filterDoctors('All')" id="filter-All" class="filter-btn active-filter px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-200 border border-slate-700">Tous</button>
+            <button onclick="filterDoctors('CardioNeuro')" id="filter-CardioNeuro" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 border border-transparent"><span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1.5"></span>Cardio & Neuro</button>
+            <button onclick="filterDoctors('PediDerma')" id="filter-PediDerma" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 border border-transparent"><span class="inline-block w-2 h-2 rounded-full bg-teal-400 mr-1.5"></span>Pédiatrie & Derma</button>
+            <button onclick="filterDoctors('GynecoOphtalmo')" id="filter-GynecoOphtalmo" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 border border-transparent"><span class="inline-block w-2 h-2 rounded-full bg-purple-500 mr-1.5"></span>Gynéco & Ophtalmo</button>
+            <button onclick="filterDoctors('Dentiste')" id="filter-Dentiste" class="filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-slate-400 border border-transparent"><span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5"></span>Dentisterie</button>
+        </div>
+        {% if user.role == 'admin' %}
+        <button onclick="openModal()" class="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs rounded-xl flex items-center gap-2 transition shadow-lg">
+            <i class="fa-solid fa-plus"></i><span>Intégrer un Médecin</span>
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+        <div id="doctors-container" class="xl:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+        <div class="xl:col-span-4 sticky top-20">
+            <div id="doctor-panel" class="glass-card p-6 rounded-2xl border border-slate-800 shadow-2xl">
+                <div class="text-center py-8 space-y-3">
+                    <div class="w-20 h-20 mx-auto rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 text-3xl"><i class="fa-solid fa-user-doctor"></i></div>
+                    <h4 class="text-sm font-bold text-slate-400">Sélectionnez un médecin</h4>
+                    <p class="text-[11px] text-slate-500">Cliquez sur une fiche médicale pour inspecter les qualifications.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Doctor Modal -->
+{% if user.role == 'admin' %}
+<div id="add-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden">
+    <div class="glass-card rounded-3xl border border-cyan-500/20 p-8 w-full max-w-lg shadow-2xl space-y-6 relative">
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition"><i class="fa-solid fa-xmark text-xl"></i></button>
+        <div><h3 class="text-xl font-bold text-white">Intégrer un Nouveau Médecin</h3><p class="text-xs text-slate-400 mt-1">Remplissez les informations pour l'ajouter au système H-Ai.</p></div>
+        <div class="space-y-4 text-xs">
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-slate-300 font-semibold block mb-1">Prénom</label><input id="new-doc-firstname" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200" placeholder="Ex: Fatima"></div>
+                <div><label class="text-slate-300 font-semibold block mb-1">Nom</label><input id="new-doc-lastname" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200" placeholder="Ex: Benali"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-slate-300 font-semibold block mb-1">Spécialité</label>
+                <select id="new-doc-specialty" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200">
+                    <option>Cardiologue</option><option>Neurologue</option><option>Pédiatre</option><option>Dermatologue</option>
+                    <option>Orthopédiste</option><option>Généraliste</option><option>Gynécologue</option><option>ophtalmologie</option><option>Dentiste</option>
+                </select></div>
+                <div><label class="text-slate-300 font-semibold block mb-1">Genre</label>
+                <select id="new-doc-gender" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200"><option value="M">Masculin</option><option value="F">Féminin</option></select></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-slate-300 font-semibold block mb-1">Honoraires (DH)</label>
+                <input id="new-doc-fee" type="number" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200" placeholder="Ex: 250"></div>
+                <div><label class="text-slate-300 font-semibold block mb-1">Email</label>
+                <input id="new-doc-email" type="email" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200" placeholder="dr@hia.ma"></div>
+            </div>
+        </div>
+        <button onclick="saveDoctor()" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black rounded-xl transition text-sm">
+            <i class="fa-solid fa-plus mr-2"></i>Intégrer dans H-Ai
+        </button>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+let allDoctors = [];
+const FILTER_MAP = {
+    CardioNeuro: ['Cardiologue','Neurologue'],
+    PediDerma:   ['Pédiatre','Dermatologue'],
+    GynecoOphtalmo: ['Gynécologue','ophtalmologie'],
+    Dentiste:    ['Dentiste']
+};
+const ICON_COLOR = {
+    'Cardiologue':'#2563EB','Neurologue':'#8B5CF6','Pédiatre':'#14B8A6','Dermatologue':'#14B8A6',
+    'Orthopédiste':'#64748B','Généraliste':'#14B8A6','Gynécologue':'#A21CAF',
+    'ophtalmologie':'#A21CAF','Dentiste':'#10B981'
+};
+
+async function loadDoctors() {
+    allDoctors = await fetch('/api/doctors').then(r=>r.json());
+    renderDoctors(allDoctors);
+}
+
+function renderDoctors(docs) {
+    const container = document.getElementById('doctors-container');
+    if (docs.length === 0) { container.innerHTML = '<p class="text-slate-500 text-sm col-span-2 text-center py-12">Aucun médecin trouvé.</p>'; return; }
+    container.innerHTML = docs.map(d => {
+        const title = d.gender === 'F' ? 'Dra.' : 'Dr.';
+        const color = ICON_COLOR[d.specialty] || '#3B82F6';
+        return `<div onclick="showDoctor(${d.id})" class="glass-card p-5 rounded-2xl border border-slate-800 hover:border-cyan-400/30 transition cursor-pointer fade-in group">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl border" style="background:${color}15;border-color:${color}30;color:${color}">
+                    <i class="fa-solid ${d.icon || 'fa-user-doctor'}"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-white group-hover:text-cyan-400 transition">${title} ${d.firstname} ${d.lastname}</h4>
+                    <p class="text-xs text-slate-400">${d.specialty}</p>
+                </div>
+            </div>
+            <div class="flex items-center justify-between text-xs pt-3 border-t border-slate-800">
+                <span class="text-slate-400"><i class="fa-solid fa-stethoscope mr-1 text-[10px]"></i>${d.consultations} consult.</span>
+                <span class="font-bold text-amber-400">${d.fee} DH</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function filterDoctors(key) {
+    document.querySelectorAll('.filter-btn').forEach(b => { b.classList.remove('active-filter','bg-slate-800','text-slate-200','border-slate-700'); b.classList.add('bg-slate-900','text-slate-400'); });
+    const btn = document.getElementById('filter-'+key);
+    btn.classList.add('active-filter','bg-slate-800','text-slate-200','border-slate-700');
+    btn.classList.remove('bg-slate-900','text-slate-400');
+    if (key === 'All') renderDoctors(allDoctors);
+    else renderDoctors(allDoctors.filter(d => FILTER_MAP[key]?.includes(d.specialty)));
+}
+
+function showDoctor(id) {
+    const d = allDoctors.find(x => x.id === id); if (!d) return;
+    const title = d.gender === 'F' ? 'Dra.' : 'Dr.';
+    const color = ICON_COLOR[d.specialty] || '#3B82F6';
+    document.getElementById('doctor-panel').innerHTML = `
+        <div class="space-y-5 fade-in">
+            <div class="text-center space-y-2">
+                <div class="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center text-3xl" style="background:${color}15;border:1px solid ${color}30;color:${color}">
+                    <i class="fa-solid ${d.icon || 'fa-user-doctor'}"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white">${title} ${d.firstname} ${d.lastname}</h3>
+                <span class="px-3 py-1 rounded-full text-[10px] font-bold" style="background:${color}15;color:${color}">${d.specialty}</span>
+            </div>
+            <div class="space-y-3 text-xs border-t border-slate-800 pt-4">
+                <div class="flex justify-between"><span class="text-slate-400">Honoraires</span><span class="text-amber-400 font-bold">${d.fee} DH / consult.</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">Consultations</span><span class="text-white font-semibold">${d.consultations}</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">Genre</span><span class="text-white">${d.gender === 'M' ? '♂ Masculin' : '♀ Féminin'}</span></div>
+                ${d.email ? `<div class="flex justify-between"><span class="text-slate-400">Email</span><span class="text-cyan-400 font-mono text-[10px]">${d.email}</span></div>` : ''}
+            </div>
+            <a href="/appointments" class="block w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs rounded-xl transition text-center">
+                <i class="fa-solid fa-calendar-plus mr-2"></i>Prendre RDV
+            </a>
+        </div>`;
+}
+
+function openModal() { document.getElementById('add-modal').classList.remove('hidden'); }
+function closeModal() { document.getElementById('add-modal').classList.add('hidden'); }
+
+async function saveDoctor() {
+    const payload = {
+        firstname: document.getElementById('new-doc-firstname').value.trim(),
+        lastname:  document.getElementById('new-doc-lastname').value.trim(),
+        specialty: document.getElementById('new-doc-specialty').value,
+        gender:    document.getElementById('new-doc-gender').value,
+        fee:       document.getElementById('new-doc-fee').value,
+        email:     document.getElementById('new-doc-email').value.trim()
+    };
+    if (!payload.firstname || !payload.lastname) { triggerCustomToast('Champs manquants','Remplissez le prénom et le nom.','warning'); return; }
+    const res = await fetch('/api/doctors',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data = await res.json();
+    if (data.ok) {
+        triggerCustomToast('Médecin ajouté','Le médecin a été intégré au système H-Ai.','success');
+        closeModal();
+        loadDoctors();
+    }
+}
+
+loadDoctors();
+</script>
+{% endblock %}

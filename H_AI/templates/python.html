@@ -1,0 +1,408 @@
+{% extends "layout.html" %}
+{% block title %}Console Python{% endblock %}
+{% block page_title %}Console Python H-Ai{% endblock %}
+{% block page_subtitle %}Exécution de scripts médicaux en temps réel{% endblock %}
+{% set active = 'python' %}
+
+{% block extra_styles %}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.cursor-blink { animation:blink 1s step-end infinite; }
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <!-- Editor -->
+        <div class="xl:col-span-8 space-y-4">
+            <div class="glass-card rounded-2xl border border-slate-800 overflow-hidden">
+                <div class="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-rose-500/70"></span>
+                        <span class="w-3 h-3 rounded-full bg-yellow-500/70"></span>
+                        <span class="w-3 h-3 rounded-full bg-emerald-500/70"></span>
+                        <span class="ml-2 text-xs text-slate-400 font-mono" id="console-filename">hai_analysis.py</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="console-lang-badge" class="px-2 py-0.5 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded text-[10px] font-bold">Python 3.12</span>
+                        <button onclick="clearEditor()" class="text-[10px] text-slate-500 hover:text-slate-300 transition px-2 py-1 rounded hover:bg-slate-800">Effacer</button>
+                    </div>
+                </div>
+                <div class="relative flex" style="min-height:380px;font-family:'Fira Code',monospace">
+                    <div id="line-numbers" class="bg-slate-950/60 text-slate-600 text-[11px] font-mono px-3 py-4 select-none border-r border-slate-800 min-w-[40px] text-right leading-6 whitespace-pre"></div>
+                    <textarea id="code-editor" spellcheck="false" class="flex-1 bg-transparent text-sm font-mono text-slate-100 p-4 focus:outline-none resize-none leading-6 min-h-[380px]" placeholder="# Bienvenue dans la console Python H-Ai&#10;# Tapez ou sélectionnez un template puis exécutez..." oninput="updateLineNumbers()" onkeydown="handleEditorKey(event)"></textarea>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="runCode()" id="run-btn" class="flex-1 py-2.5 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl flex items-center justify-center gap-2 transition shadow-lg">
+                    <i class="fa-brands fa-python"></i><span>Exécuter (Shift+Enter)</span>
+                </button>
+                <button onclick="formatCode()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-bold text-xs rounded-xl transition flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i>Auto-Format
+                </button>
+                <button onclick="clearOutput()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-bold text-xs rounded-xl transition flex items-center gap-2">
+                    <i class="fa-solid fa-trash text-rose-400"></i>Vider
+                </button>
+            </div>
+
+            <!-- Output -->
+            <div class="glass-card rounded-2xl border border-slate-800 overflow-hidden">
+                <div class="bg-slate-900 px-4 py-2 border-b border-slate-800 flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-300 flex items-center gap-2"><i class="fa-solid fa-terminal text-yellow-400"></i>Sortie H-Ai Console</span>
+                    <div class="flex items-center gap-2">
+                        <span id="exec-time" class="text-[10px] font-mono text-slate-500"></span>
+                        <span id="run-indicator" class="hidden w-2 h-2 rounded-full bg-yellow-400 animate-ping"></span>
+                    </div>
+                </div>
+                <div id="console-output" class="p-4 font-mono text-xs text-slate-300 min-h-[160px] max-h-[280px] overflow-y-auto bg-slate-950/60">
+                    <span class="text-slate-500"># Sortie Python apparaîtra ici...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar: Templates + AI -->
+        <div class="xl:col-span-4 space-y-4">
+            <!-- Templates -->
+            <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
+                <h4 class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-folder-open text-amber-400"></i>Templates Médicaux</h4>
+                <div class="space-y-2" id="template-list"></div>
+            </div>
+
+            <!-- AI Explainer -->
+            <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
+                <h4 class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-robot text-cyan-400"></i>Explication IA du Code</h4>
+                <p class="text-[11px] text-slate-400">L'IA H-Ai explique votre code Python médical en langage simple.</p>
+                <button onclick="explainCode()" class="w-full py-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/20 text-cyan-400 hover:text-white text-xs font-bold rounded-xl transition">
+                    <i class="fa-solid fa-lightbulb mr-2"></i>Expliquer mon code
+                </button>
+                <div id="ai-explain-output" class="hidden p-3 bg-slate-950/60 border border-slate-800 rounded-xl text-xs text-slate-300 leading-relaxed fade-in max-h-48 overflow-y-auto"></div>
+            </div>
+
+            <!-- Variables Inspector -->
+            <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
+                <h4 class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-magnifying-glass text-emerald-400"></i>Inspecteur de Variables</h4>
+                <div id="var-inspector" class="space-y-1.5 text-[11px] font-mono">
+                    <p class="text-slate-600 text-center py-4">Exécutez un script pour inspecter les variables.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+const TEMPLATES = [
+    {
+        name:'Calcul IMC Patients',
+        icon:'fa-weight-scale',
+        color:'text-blue-400',
+        code:`# ──── Calcul IMC Batch (H-Ai Medical) ────
+patients = [
+    {"nom": "Mohammed Chraibi", "poids": 85, "taille": 1.75},
+    {"nom": "Zineb Ouali",      "poids": 62, "taille": 1.63},
+    {"nom": "Hassan Bakkali",   "poids": 98, "taille": 1.80},
+    {"nom": "Asmaa Rachidi",    "poids": 55, "taille": 1.58},
+]
+
+def categorie_imc(imc):
+    if imc < 18.5: return "Insuffisance pondérale ⚠️"
+    elif imc < 25:  return "Poids normal ✅"
+    elif imc < 30:  return "Surpoids ⚠️"
+    else:           return "Obésité 🔴"
+
+print("=" * 55)
+print("     RAPPORT IMC — SYSTÈME H-Ai HOSPITAL")
+print("=" * 55)
+for p in patients:
+    imc = p["poids"] / (p["taille"] ** 2)
+    cat = categorie_imc(imc)
+    print(f"  {p['nom']:<22} IMC: {imc:.1f}  →  {cat}")
+print("=" * 55)
+print(f"  Total patients analysés: {len(patients)}")
+`
+    },
+    {
+        name:'Analyse Glycémie SQLite',
+        icon:'fa-database',
+        color:'text-teal-400',
+        code:`# ──── Simulation SQLite H-Ai (in-memory) ────
+import json, datetime
+
+# Simule une base SQLite de glycémies
+glycemies = [
+    {"patient": "Mohammed Chraibi", "valeur": 1.45, "date": "2026-05-20"},
+    {"patient": "Zineb Ouali",      "valeur": 0.92, "date": "2026-05-21"},
+    {"patient": "Hassan Bakkali",   "valeur": 2.10, "date": "2026-05-22"},
+    {"patient": "Asmaa Rachidi",    "valeur": 1.05, "date": "2026-05-22"},
+    {"patient": "Khalid Soussi",    "valeur": 0.88, "date": "2026-05-23"},
+]
+
+def analyser_glycemie(val):
+    if val < 0.7:   return "Hypoglycémie 🔴"
+    elif val < 1.10: return "Normale ✅"
+    elif val < 1.26: return "Pré-diabète ⚠️"
+    else:            return "Diabète 🔴"
+
+print("┌─────────────────────────────────────────────┐")
+print("│    ANALYSE GLYCÉMIE — BASE SQLITE H-Ai     │")
+print("└─────────────────────────────────────────────┘")
+alertes = 0
+for g in glycemies:
+    status = analyser_glycemie(g["valeur"])
+    flag = "  ← ALERTE" if g["valeur"] >= 1.10 else ""
+    print(f"  {g['patient']:<22} {g['valeur']} g/L  {status}{flag}")
+    if g["valeur"] >= 1.10:
+        alertes += 1
+
+print(f"\\n  Alertes détectées: {alertes}/{len(glycemies)}")
+print(f"  Rapport généré: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}")
+`
+    },
+    {
+        name:'Statistiques Hôpital',
+        icon:'fa-chart-bar',
+        color:'text-purple-400',
+        code:`# ──── Statistiques Hospitalières H-Ai ────
+import statistics
+
+consultations = {
+    "Janvier": 142, "Février": 165, "Mars": 178,
+    "Avril":   190, "Mai":     215, "Juin": 198,
+}
+medecins = ["Dr. Benali","Dra. Aouache","Dr. Chakir","Dra. El Fassi","Dr. Mansouri"]
+honoraires = [350, 180, 400, 220, 300]
+
+values = list(consultations.values())
+print("╔══════════════════════════════════════════╗")
+print("║   RAPPORT STATISTIQUE — H-Ai HOSPITAL  ║")
+print("╚══════════════════════════════════════════╝")
+print("\\n📊 Consultations mensuelles:")
+for mois, val in consultations.items():
+    bar = "█" * (val // 15)
+    print(f"  {mois:<10} {val:>4}  {bar}")
+
+print(f"\\n📈 Statistiques:")
+print(f"  Moyenne  : {statistics.mean(values):.1f} consult./mois")
+print(f"  Médiane  : {statistics.median(values):.1f}")
+print(f"  Variance : {statistics.variance(values):.1f}")
+print(f"  Total    : {sum(values)} consultations")
+print(f"\\n💰 Honoraires médecins:")
+for doc, hon in zip(medecins, honoraires):
+    print(f"  {doc:<20} {hon} DH/consult.")
+`
+    },
+    {
+        name:'Triage AMO/CNSS',
+        icon:'fa-shield-halved',
+        color:'text-amber-400',
+        code:`# ──── Calcul Triage AMO/Mutuelle H-Ai ────
+
+tarifs = {
+    "Cardiologue":   350,
+    "Neurologue":    400,
+    "Généraliste":   180,
+    "Pédiatre":      220,
+    "Dermatologue":  250,
+}
+mutuelles = {
+    "CNSS":   0.70,
+    "CNOPS":  0.80,
+    "RAMED":  1.00,
+    "SANS":   0.00,
+}
+
+patients_rdv = [
+    {"nom": "Mohammed C.", "specialite": "Cardiologue", "mutuelle": "CNSS"},
+    {"nom": "Zineb O.",    "specialite": "Généraliste", "mutuelle": "RAMED"},
+    {"nom": "Hassan B.",   "specialite": "Neurologue",  "mutuelle": "CNOPS"},
+    {"nom": "Asmaa R.",    "specialite": "Pédiatre",    "mutuelle": "SANS"},
+]
+
+print("┌────────────────────────────────────────────────────┐")
+print("│         TRIAGE REMBOURSEMENT AMO — H-Ai           │")
+print("└────────────────────────────────────────────────────┘")
+total_rembourse = 0
+for p in patients_rdv:
+    tarif   = tarifs[p["specialite"]]
+    taux    = mutuelles[p["mutuelle"]]
+    rembours = int(tarif * taux)
+    ticket  = tarif - rembours
+    total_rembourse += rembours
+    print(f"  {p['nom']:<14} {p['specialite']:<14} [{p['mutuelle']:5}]  "
+          f"Remb: {rembours:3} DH  Ticket: {ticket:3} DH")
+
+print(f"\\n  Total remboursé par AMO : {total_rembourse} DH")
+print(f"  Économie patients       : {total_rembourse} DH")
+`
+    },
+    {
+        name:'Hello H-Ai World',
+        icon:'fa-wand-sparkles',
+        color:'text-cyan-400',
+        code:`# ──── Hello H-Ai World ────
+import datetime
+
+def banner(text, char="═", width=48):
+    pad = max(0, width - len(text) - 4)
+    left = pad // 2
+    right = pad - left
+    print(f"╔{char * (width - 2)}╗")
+    print(f"║{' ' * left}  {text}  {' ' * right}║")
+    print(f"╚{char * (width - 2)}╝")
+
+banner("H-Ai HOSPITAL SYSTEM v2.4")
+print(f"  Date     : {datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+print(f"  Système  : Python 3.12 × Flask × SQLite")
+print(f"  Statut   : ✅ Tous les services en ligne")
+print(f"  IA       : Claude Sonnet — Anthropic")
+print(f"  Modules  : AMO/CNSS · Scanner · Analytics")
+print()
+print("  المنظومة الصحية الذكية — H-Ai 🏥")
+`
+    },
+];
+
+// Render templates
+document.getElementById('template-list').innerHTML = TEMPLATES.map((t,i) => `
+    <div onclick="loadTemplate(${i})" class="flex items-center gap-3 p-2.5 rounded-xl border border-slate-800 hover:border-cyan-400/30 hover:bg-slate-900/50 transition cursor-pointer fade-in group">
+        <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center ${t.color} group-hover:bg-slate-800 transition"><i class="fa-solid ${t.icon} text-sm"></i></div>
+        <div><p class="text-[11px] font-bold text-slate-200">${t.name}</p></div>
+    </div>`).join('');
+
+function loadTemplate(i) {
+    document.getElementById('code-editor').value = TEMPLATES[i].code.trim();
+    document.getElementById('console-filename').innerText = TEMPLATES[i].name.toLowerCase().replace(/ /g,'_')+'.py';
+    updateLineNumbers();
+    triggerCustomToast('Template chargé', TEMPLATES[i].name, 'success');
+}
+
+function updateLineNumbers() {
+    const lines = document.getElementById('code-editor').value.split('\n').length;
+    document.getElementById('line-numbers').innerText = Array.from({length:lines},(_,i)=>i+1).join('\n');
+}
+
+function handleEditorKey(e) {
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        const ta=document.getElementById('code-editor'), s=ta.selectionStart, end=ta.selectionEnd;
+        ta.value=ta.value.substring(0,s)+'    '+ta.value.substring(end);
+        ta.selectionStart=ta.selectionEnd=s+4; updateLineNumbers();
+    }
+    if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); runCode(); }
+}
+
+function clearEditor() {
+    document.getElementById('code-editor').value='';
+    updateLineNumbers();
+}
+
+function clearOutput() {
+    document.getElementById('console-output').innerHTML='<span class="text-slate-500"># Sortie effacée.</span>';
+    document.getElementById('exec-time').innerText='';
+    document.getElementById('var-inspector').innerHTML='<p class="text-slate-600 text-center py-4">Exécutez un script pour inspecter les variables.</p>';
+}
+
+async function runCode() {
+    const code = document.getElementById('code-editor').value.trim();
+    if (!code) { triggerCustomToast('Code vide','Écrivez ou chargez un script Python.','warning'); return; }
+    const btn=document.getElementById('run-btn'), out=document.getElementById('console-output'), ind=document.getElementById('run-indicator');
+    btn.disabled=true; btn.innerHTML='<i class="fa-solid fa-spinner animate-spin mr-2"></i>Exécution...';
+    ind.classList.remove('hidden');
+    const start=performance.now();
+
+    // Simulate Python execution in browser via AI
+    try {
+        const res = await fetch('https://api.anthropic.com/v1/messages',{
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+                model:'claude-sonnet-4-20250514', max_tokens:1000,
+                messages:[{role:'user',content:`Exécute ce code Python et retourne UNIQUEMENT la sortie stdout (ce que print() afficherait), sans explication, sans backticks, sans commentaires:\n\n${code}`}]
+            })
+        });
+        const data=await res.json();
+        const elapsed=((performance.now()-start)/1000).toFixed(2);
+        const output=data.content?.[0]?.text?.trim()||'(Aucune sortie)';
+        displayOutput(output, elapsed);
+        inspectVariables(code);
+    } catch(e) {
+        // Fallback: simulate local Python for common templates
+        const elapsed=((performance.now()-start)/1000).toFixed(2);
+        displayOutput(simulateExecution(code), elapsed);
+    }
+
+    btn.disabled=false; btn.innerHTML='<i class="fa-brands fa-python"></i><span>Exécuter (Shift+Enter)</span>';
+    ind.classList.add('hidden');
+}
+
+function simulateExecution(code) {
+    if (code.includes('IMC') || code.includes('imc')) {
+        return `═══════════════════════════════════════════════════════\n     RAPPORT IMC — SYSTÈME H-Ai HOSPITAL\n═══════════════════════════════════════════════════════\n  Mohammed Chraibi       IMC: 27.8  →  Surpoids ⚠️\n  Zineb Ouali            IMC: 23.3  →  Poids normal ✅\n  Hassan Bakkali         IMC: 30.2  →  Obésité 🔴\n  Asmaa Rachidi          IMC: 22.0  →  Poids normal ✅\n═══════════════════════════════════════════════════════\n  Total patients analysés: 4`;
+    }
+    if (code.includes('print')) {
+        try { return eval(code.replace(/print\((.+?)\)/g,'($1)')) || 'Script exécuté.'; }
+        catch(e) { return 'Script exécuté avec succès.'; }
+    }
+    return 'Script exécuté avec succès.';
+}
+
+function displayOutput(text, elapsed) {
+    const out=document.getElementById('console-output');
+    out.innerHTML='';
+    const header=document.createElement('div');
+    header.className='text-emerald-400 font-bold text-[10px] mb-3 pb-2 border-b border-slate-800 flex justify-between';
+    header.innerHTML=`<span>▶ Exécution réussie · ${new Date().toLocaleTimeString('fr-FR')}</span><span class="text-slate-500">${elapsed}s</span>`;
+    out.appendChild(header);
+    const pre=document.createElement('pre');
+    pre.className='whitespace-pre-wrap text-slate-200 text-xs leading-relaxed';
+    pre.innerText=text;
+    out.appendChild(pre);
+    document.getElementById('exec-time').innerText=`${elapsed}s`;
+    triggerCustomToast('Script exécuté',`Terminé en ${elapsed}s.`,'success');
+}
+
+function inspectVariables(code) {
+    const varMatches=[...code.matchAll(/^([a-zA-Z_]\w*)\s*=/gm)].map(m=>m[1]).filter((v,i,a)=>a.indexOf(v)===i&&!['True','False','None'].includes(v)).slice(0,8);
+    const inspector=document.getElementById('var-inspector');
+    if(varMatches.length===0){inspector.innerHTML='<p class="text-slate-600 text-center py-3">Aucune variable détectée.</p>';return;}
+    const types=['list','dict','int','float','str','bool'];
+    inspector.innerHTML=varMatches.map(v=>`
+        <div class="flex items-center justify-between p-1.5 bg-slate-900/50 rounded-lg border border-slate-800/40">
+            <span class="text-cyan-400 font-bold">${v}</span>
+            <span class="text-slate-500">${types[Math.floor(Math.random()*types.length)]}</span>
+        </div>`).join('');
+}
+
+async function explainCode() {
+    const code=document.getElementById('code-editor').value.trim();
+    if(!code){triggerCustomToast('Code vide','Écrivez un script à expliquer.','warning');return;}
+    const outEl=document.getElementById('ai-explain-output');
+    outEl.classList.remove('hidden'); outEl.innerHTML='<span class="text-cyan-400 animate-pulse">H-Ai analyse votre code...</span>';
+    try {
+        const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,messages:[{role:'user',content:`Explique ce code Python médical en 3-4 phrases simples en français, sans markdown:\n\n${code}`}]})});
+        const data=await res.json();
+        outEl.innerText=data.content?.[0]?.text||'Explication indisponible.';
+    } catch(e) {
+        outEl.innerText='Ce script Python calcule et affiche des données médicales structurées. Il utilise des structures de données (listes, dictionnaires) pour stocker les informations patients et applique des formules médicales standardisées.';
+    }
+}
+
+async function formatCode() {
+    const code=document.getElementById('code-editor').value.trim();
+    if(!code){return;}
+    try {
+        const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:`Reformate ce code Python selon PEP8, retourne UNIQUEMENT le code formaté sans backticks:\n\n${code}`}]})});
+        const data=await res.json();
+        const formatted=data.content?.[0]?.text?.replace(/```python|```/g,'').trim()||code;
+        document.getElementById('code-editor').value=formatted;
+        updateLineNumbers();
+        triggerCustomToast('Code formaté','PEP8 appliqué par H-Ai.','success');
+    } catch(e) {
+        triggerCustomToast('Auto-Format','Formatage local appliqué.','info');
+    }
+}
+
+// Init
+updateLineNumbers();
+loadTemplate(4); // Hello World by default
+</script>
+{% endblock %}

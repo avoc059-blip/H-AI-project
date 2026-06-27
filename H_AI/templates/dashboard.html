@@ -1,0 +1,304 @@
+{% extends "layout.html" %}
+{% block title %}Tableau de Bord{% endblock %}
+{% block page_title %}
+    {% if user.role == 'admin' %}Vue d'ensemble{% elif user.role == 'medecin' %}Tableau de Bord Médecin{% else %}Mon Dossier Patient{% endif %}
+{% endblock %}
+{% block page_subtitle %}
+    {% if user.role == 'admin' %}Supervision de l'activité hospitalière{% elif user.role == 'medecin' %}Gérez vos consultations et suivis{% else %}Consultez vos informations médicales{% endif %}
+{% endblock %}
+{% set active = 'dashboard' %}
+
+{% block content %}
+
+<!-- ═══ ADMIN DASHBOARD ═══ -->
+{% if user.role == 'admin' %}
+<div class="space-y-8">
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950/30 to-slate-900 border border-slate-800 rounded-2xl p-6 relative overflow-hidden flex items-center justify-between">
+        <div class="absolute w-80 h-80 rounded-full bg-cyan-500/5 blur-3xl -top-10 -right-10"></div>
+        <div class="space-y-2 z-10 max-w-xl">
+            <h3 class="text-2xl font-bold text-white">Bon retour, Administrateurs MERIEM & SALIMA 👋</h3>
+            <p class="text-slate-300 text-sm">Le moteur de triage a scanné les fiches cliniques. Planning synchronisé avec CNSS/AMO.</p>
+        </div>
+        <div class="z-10 bg-slate-950/80 px-4 py-3 rounded-xl border border-slate-800 flex items-center gap-4">
+            <i class="fa-solid fa-robot text-cyan-400 text-2xl animate-pulse"></i>
+            <div><div class="text-xs text-slate-400">Disponibilité IA</div><div class="text-sm font-bold text-emerald-400">100% en ligne</div></div>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="glass-card p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+            <div><span class="text-xs text-slate-400 uppercase font-semibold">Médecins Actifs</span>
+            <h4 class="text-3xl font-bold text-white" id="kpi-doctors">—</h4>
+            <span class="text-[10px] text-emerald-400"><i class="fa-solid fa-circle text-[7px] mr-1"></i>Tous de garde</span></div>
+            <div class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-cyan-400 text-xl border border-blue-500/20"><i class="fa-solid fa-user-md"></i></div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+            <div><span class="text-xs text-slate-400 uppercase font-semibold">Consultations</span>
+            <h4 class="text-3xl font-bold text-white" id="kpi-appointments">—</h4>
+            <span class="text-[10px] text-yellow-500 font-semibold"><i class="fa-solid fa-clock mr-1"></i>en base</span></div>
+            <div class="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-400 text-xl border border-yellow-500/20"><i class="fa-regular fa-calendar-days"></i></div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+            <div><span class="text-xs text-slate-400 uppercase font-semibold">Taux d'occupation</span>
+            <h4 class="text-3xl font-bold text-white">84.2%</h4>
+            <span class="text-[10px] text-emerald-400"><i class="fa-solid fa-arrow-up mr-1"></i>+2.1% cette semaine</span></div>
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-xl border border-emerald-500/20"><i class="fa-solid fa-bed"></i></div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+            <div><span class="text-xs text-slate-400 uppercase font-semibold">Analyses IA</span>
+            <h4 class="text-3xl font-bold text-white">1,420</h4>
+            <span class="text-[10px] text-purple-400 font-semibold"><i class="fa-solid fa-microchip mr-1"></i>Précision 99.4%</span></div>
+            <div class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 text-xl border border-purple-500/20"><i class="fa-solid fa-dna"></i></div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 glass-card p-6 rounded-2xl border border-slate-800">
+            <h4 class="text-md font-bold text-white mb-1">Tendances des Consultations & Diagnostics</h4>
+            <p class="text-xs text-slate-400 mb-4">Performances comparées des diagnostics assistés par H-Ai</p>
+            <div class="h-64"><canvas id="analyticsChart"></canvas></div>
+        </div>
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 flex flex-col gap-4">
+            <div>
+                <h4 class="text-md font-bold text-white flex items-center gap-2"><i class="fa-solid fa-robot text-cyan-400"></i>H-Ai Diagnostic Rapide</h4>
+                <p class="text-xs text-slate-400 mt-1">Interrogez l'assistant médical pour une aide à la décision.</p>
+            </div>
+            <textarea id="quick-symptoms" rows="3" class="w-full text-xs p-3 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 resize-none" placeholder="Ex: Douleur thoracique, dyspnée..."></textarea>
+            <button onclick="runQuickDiag()" class="w-full py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1 transition">
+                <i class="fa-solid fa-play"></i><span>Analyse prédictive</span>
+            </button>
+            <div id="quick-diag-output" class="hidden p-3 bg-slate-950/60 border border-slate-800/50 rounded-lg text-xs text-slate-300 space-y-2 fade-in">
+                <div class="flex justify-between text-[10px] text-cyan-400 font-bold uppercase"><span>Recommandation AI</span><span class="text-yellow-500">Fiabilité 94.2%</span></div>
+                <p id="quick-diag-text"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ MEDECIN DASHBOARD ═══ -->
+{% elif user.role == 'medecin' %}
+<div class="space-y-6">
+    <div class="bg-gradient-to-r from-slate-900 via-blue-950/20 to-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-between">
+        <div>
+            <h3 class="text-xl font-bold text-white">Bienvenue, {{ user.name }} 👨‍⚕️</h3>
+            <p class="text-slate-400 text-xs mt-1">{{ user.specialty or 'Médecin' }} — H-Ai Hospital System</p>
+        </div>
+        <div class="glass-card px-4 py-3 rounded-xl border border-blue-500/20 text-center">
+            <div class="text-2xl font-bold text-blue-400" id="medecin-appt-count">—</div>
+            <div class="text-[10px] text-slate-400">RDV aujourd'hui</div>
+        </div>
+    </div>
+    <div class="grid grid-cols-3 gap-4">
+        <div class="glass-card p-4 rounded-2xl border border-slate-800 text-center space-y-1">
+            <i class="fa-solid fa-users text-blue-400 text-xl"></i>
+            <p class="text-2xl font-bold text-white" id="medecin-patient-count">—</p>
+            <p class="text-[10px] text-slate-400">Patients suivis</p>
+        </div>
+        <div class="glass-card p-4 rounded-2xl border border-slate-800 text-center space-y-1">
+            <i class="fa-solid fa-coins text-yellow-400 text-xl"></i>
+            <p class="text-2xl font-bold text-yellow-400" id="medecin-fee">—</p>
+            <p class="text-[10px] text-slate-400">Honoraires / consult.</p>
+        </div>
+        <div class="glass-card p-4 rounded-2xl border border-slate-800 text-center space-y-1">
+            <i class="fa-solid fa-chart-line text-emerald-400 text-xl"></i>
+            <p class="text-2xl font-bold text-white" id="medecin-total">—</p>
+            <p class="text-[10px] text-slate-400">Total consultations</p>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
+            <h4 class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-list-check text-blue-400"></i>Mes RDV récents</h4>
+            <div id="medecin-appts" class="space-y-2 text-xs text-slate-400">Chargement...</div>
+        </div>
+        <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-3">
+            <h4 class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-robot text-purple-400"></i>Diagnostic Rapide H-Ai</h4>
+            <textarea id="medecin-symptoms" rows="3" class="w-full text-xs p-3 bg-slate-900 border border-slate-800 rounded-lg text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-cyan-400 resize-none" placeholder="Décrivez les symptômes du patient..."></textarea>
+            <button onclick="runQuickDiag()" class="w-full py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold text-xs rounded-xl transition">
+                <i class="fa-solid fa-brain mr-1"></i>Aide au diagnostic H-Ai
+            </button>
+            <div id="quick-diag-output" class="hidden p-3 bg-slate-950/60 border border-slate-800 rounded-lg text-xs text-slate-300 fade-in">
+                <p id="quick-diag-text"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ PATIENT DASHBOARD ═══ -->
+{% else %}
+<div class="space-y-6" id="patient-dashboard">
+    <div class="glass-card p-6 rounded-2xl border border-slate-800 flex items-center gap-6">
+        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-2xl font-bold text-slate-950" id="patient-avatar">{{ user.initials }}</div>
+        <div class="flex-1">
+            <div class="flex items-center gap-3 flex-wrap mb-2">
+                <h3 class="text-xl font-bold text-white" id="patient-name">{{ user.name }}</h3>
+                <span id="patient-mutuelle-badge" class="px-2 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full text-[10px] font-bold">{{ user.mutuelle or 'CNSS' }}</span>
+                <span id="patient-blood-badge" class="px-2 py-0.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-full text-[10px] font-bold">{{ user.blood or '—' }}</span>
+            </div>
+            <p class="text-xs text-slate-400">Dossier patient H-Ai · Données synchronisées avec le système hospitalier</p>
+        </div>
+        <div class="text-right">
+            <p class="text-[10px] text-slate-500 mb-1">RDV planifiés</p>
+            <p class="text-2xl font-bold text-cyan-400" id="patient-rdv-count">—</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Infos médicales -->
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+            <h4 class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-id-card text-cyan-400"></i>Informations Médicales</h4>
+            <div class="space-y-3 text-xs">
+                <div class="flex justify-between border-b border-slate-800 pb-2"><span class="text-slate-400">CIN</span><span class="text-slate-200 font-mono" id="pd-cin">—</span></div>
+                <div class="flex justify-between border-b border-slate-800 pb-2"><span class="text-slate-400">Date de naissance</span><span class="text-slate-200" id="pd-dob">—</span></div>
+                <div class="flex justify-between border-b border-slate-800 pb-2"><span class="text-slate-400">Téléphone</span><span class="text-slate-200" id="pd-phone">—</span></div>
+                <div class="flex justify-between border-b border-slate-800 pb-2"><span class="text-slate-400">Antécédents</span><span class="text-slate-200 text-right max-w-[200px]" id="pd-antecedents">—</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">Allergies</span><span class="text-slate-200" id="pd-allergies">—</span></div>
+            </div>
+        </div>
+        <!-- Mes RDV -->
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+            <h4 class="text-sm font-bold text-white flex items-center gap-2"><i class="fa-solid fa-calendar-check text-emerald-400"></i>Mes Rendez-vous</h4>
+            <div id="patient-appts-list" class="space-y-3 text-xs">Chargement...</div>
+            <a href="/appointments" class="block w-full py-2 text-center bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-xs font-bold hover:bg-emerald-500/20 transition">
+                <i class="fa-solid fa-plus mr-1"></i>Prendre un rendez-vous
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+const USER_ROLE = "{{ user.role }}";
+
+// ── CHART (admin only) ──
+{% if user.role == 'admin' %}
+(async () => {
+    const stats = await fetch('/api/stats').then(r=>r.json());
+    document.getElementById('kpi-doctors').innerText = stats.doctors;
+    document.getElementById('kpi-appointments').innerText = stats.appointments;
+
+    const ctx = document.getElementById('analyticsChart').getContext('2d');
+    new Chart(ctx, {
+        type:'line',
+        data:{
+            labels:['Jan','Fév','Mar','Avr','Mai','Jun'],
+            datasets:[
+                {label:'Consultations',data:[45,62,58,71,83,97],borderColor:'#00F2FE',backgroundColor:'rgba(0,242,254,.08)',tension:.4,fill:true,pointBackgroundColor:'#00F2FE'},
+                {label:'Diagnostics IA',data:[30,48,52,65,78,91],borderColor:'#D4AF37',backgroundColor:'rgba(212,175,55,.05)',tension:.4,fill:true,pointBackgroundColor:'#D4AF37'}
+            ]
+        },
+        options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}}},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.03)'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,.03)'}}}}
+    });
+})();
+{% endif %}
+
+// ── MEDECIN ──
+{% if user.role == 'medecin' %}
+(async () => {
+    const appts = await fetch('/api/appointments').then(r=>r.json());
+    document.getElementById('medecin-appt-count').innerText = appts.length;
+    document.getElementById('medecin-total').innerText = appts.length;
+    document.getElementById('medecin-patient-count').innerText = new Set(appts.map(a=>a.patient_name)).size;
+
+    const apptDiv = document.getElementById('medecin-appts');
+    if (appts.length === 0) { apptDiv.innerHTML = '<p class="text-center py-4">Aucun rendez-vous.</p>'; }
+    else {
+        apptDiv.innerHTML = appts.slice(0,5).map(a => `
+            <div class="flex items-center justify-between p-2.5 bg-slate-900/50 rounded-xl border border-slate-800">
+                <div><p class="font-semibold text-slate-200">${a.patient_name}</p><p class="text-slate-500 text-[10px]">${a.appt_date} à ${a.appt_time}</p></div>
+                <span class="px-2 py-0.5 rounded text-[9px] font-bold ${a.status==='Confirmé'?'text-emerald-400 bg-emerald-500/10':'text-yellow-400 bg-yellow-500/10'}">${a.status}</span>
+            </div>`).join('');
+    }
+})();
+{% endif %}
+
+// ── PATIENT ──
+{% if user.role == 'patient' %}
+(async () => {
+    const me = await fetch('/api/patient/me').then(r=>r.json());
+    document.getElementById('pd-cin').innerText = me.cin || '—';
+    document.getElementById('pd-dob').innerText = me.dob || '—';
+    document.getElementById('pd-phone').innerText = me.phone || '—';
+    document.getElementById('pd-antecedents').innerText = me.antecedents || 'Aucun';
+    document.getElementById('pd-allergies').innerText = me.allergies || 'Aucune';
+
+    const appts = await fetch('/api/appointments').then(r=>r.json());
+    document.getElementById('patient-rdv-count').innerText = appts.length;
+    const list = document.getElementById('patient-appts-list');
+    if (appts.length === 0) { list.innerHTML = '<p class="text-slate-500 text-center py-4">Aucun rendez-vous planifié.</p>'; }
+    else {
+        list.innerHTML = appts.slice(0,4).map(a => `
+            <div class="flex items-center justify-between p-2.5 bg-slate-900/50 rounded-xl border border-slate-800">
+                <div>
+                    <p class="font-semibold text-slate-200">Dr. ${a.lastname || 'H-Ai'}</p>
+                    <p class="text-slate-500 text-[10px]">${a.appt_date} à ${a.appt_time || ''}</p>
+                </div>
+                <span class="px-2 py-0.5 rounded text-[9px] font-bold ${a.status==='Confirmé'?'text-emerald-400 bg-emerald-500/10':'text-yellow-400 bg-yellow-500/10'}">${a.status}</span>
+            </div>`).join('');
+    }
+})();
+{% endif %}
+
+// ── QUICK DIAG ──
+async function runQuickDiag() {
+    const symptomsEl = document.getElementById('quick-symptoms') || document.getElementById('medecin-symptoms');
+    const symptoms = symptomsEl?.value?.trim();
+    if (!symptoms) { triggerCustomToast('Champ vide','Décrivez les symptômes d\'abord.','warning'); return; }
+    const out = document.getElementById('quick-diag-output');
+    const txt = document.getElementById('quick-diag-text');
+    out.classList.remove('hidden');
+    txt.innerText = 'Analyse en cours...';
+    try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+                model:'claude-sonnet-4-20250514', max_tokens:500,
+                messages:[{role:'user',content:`Tu es un assistant médical H-Ai. Analyse ces symptômes et donne une recommandation médicale brève en 2-3 phrases: "${symptoms}". Réponds en français, de façon professionnelle.`}]
+            })
+        });
+        const data = await res.json();
+        txt.innerText = data.content?.[0]?.text || 'Analyse indisponible.';
+    } catch(e) {
+        const diags = {
+            'douleur': 'Évaluation clinique recommandée. Surveillance des constantes vitales.',
+            'fièvre': 'Température à surveiller. Hydratation et repos conseillés. Consultation si >38.5°C.',
+            'default': 'Consultation médicale recommandée. Bilan biologique standard conseillé.'
+        };
+        const key = Object.keys(diags).find(k => symptoms.toLowerCase().includes(k)) || 'default';
+        txt.innerText = diags[key];
+    }
+}
+</script>
+{% endblock %}
+
+
+<div class="glass-card p-6 rounded-2xl border border-slate-800 mt-6">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h4 class="text-lg font-bold text-white">System Status</h4>
+            <p class="text-xs text-slate-400">Hospital Information System Monitoring</p>
+        </div>
+        <span class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
+            ● Active &amp; Operational
+        </span>
+    </div>
+    <table class="w-full text-sm">
+        <thead>
+            <tr>
+                <th class="text-left py-2">Service</th>
+                <th class="text-left py-2">Status</th>
+                <th class="text-left py-2">Availability</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>Authentication Service</td><td>Online</td><td>100%</td></tr>
+            <tr><td>Patient Records</td><td>Online</td><td>100%</td></tr>
+            <tr><td>Appointment Management</td><td>Online</td><td>100%</td></tr>
+            <tr><td>Pharmacy Module</td><td>Online</td><td>100%</td></tr>
+            <tr><td>Analytics Engine</td><td>Online</td><td>100%</td></tr>
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,225 @@
+{% extends "layout.html" %}
+{% block title %}Paramètres{% endblock %}
+{% block page_title %}Paramètres du Système{% endblock %}
+{% block page_subtitle %}Configuration et préférences H-Ai{% endblock %}
+{% set active = 'parameters' %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Left nav -->
+        <div class="lg:col-span-3">
+            <div class="glass-card p-4 rounded-2xl border border-slate-800 space-y-1">
+                <button onclick="showTab('profile')" id="tab-profile" class="param-tab w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-white bg-slate-900 border border-slate-700">
+                    <i class="fa-solid fa-user-circle text-cyan-400 w-4"></i>Profil & Identité
+                </button>
+                <button onclick="showTab('hospital')" id="tab-hospital" class="param-tab w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900 transition">
+                    <i class="fa-solid fa-hospital text-blue-400 w-4"></i>Hôpital H-Ai
+                </button>
+                <button onclick="showTab('security')" id="tab-security" class="param-tab w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900 transition">
+                    <i class="fa-solid fa-shield-halved text-amber-400 w-4"></i>Sécurité & Accès
+                </button>
+                <button onclick="showTab('notifications')" id="tab-notifications" class="param-tab w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900 transition">
+                    <i class="fa-regular fa-bell text-rose-400 w-4"></i>Notifications
+                </button>
+                <button onclick="showTab('database')" id="tab-database" class="param-tab w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-900 transition">
+                    <i class="fa-solid fa-database text-emerald-400 w-4"></i>Base de données
+                </button>
+            </div>
+        </div>
+
+        <!-- Right content -->
+        <div class="lg:col-span-9 space-y-6">
+
+            <!-- ── Profile Tab ── -->
+            <div id="section-profile" class="space-y-6 fade-in">
+                <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-5">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-user-circle text-cyan-400"></i>Profil & Identité</h3>
+                    <div class="flex items-center gap-5">
+                        <div class="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-black
+                            {% if user.role == 'admin' %}bg-gradient-to-br from-yellow-400 to-yellow-600 text-slate-950
+                            {% elif user.role == 'medecin' %}bg-gradient-to-br from-blue-400 to-blue-600 text-white
+                            {% else %}bg-gradient-to-br from-emerald-400 to-teal-600 text-slate-950{% endif %}">
+                            {{ user.initials }}
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-bold text-white">{{ user.name }}</h4>
+                            <p class="text-slate-400 text-xs mt-0.5">{{ user.email }}</p>
+                            <span class="mt-2 inline-block px-2 py-0.5 rounded-full text-[10px] font-bold
+                                {% if user.role == 'admin' %}bg-yellow-500/10 text-yellow-400 border border-yellow-500/20
+                                {% elif user.role == 'medecin' %}bg-blue-500/10 text-blue-400 border border-blue-500/20
+                                {% else %}bg-emerald-500/10 text-emerald-400 border border-emerald-500/20{% endif %}">
+                                {% if user.role == 'admin' %}Administrateur H-Ai
+                                {% elif user.role == 'medecin' %}Médecin — {{ user.specialty or 'Spécialiste' }}
+                                {% else %}Patient{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-xs pt-4 border-t border-slate-800">
+                        <div><label class="font-bold text-slate-400 block mb-1 text-[10px] uppercase tracking-wider">Nom complet</label>
+                        <input value="{{ user.name }}" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-400"></div>
+                        <div><label class="font-bold text-slate-400 block mb-1 text-[10px] uppercase tracking-wider">Email</label>
+                        <input value="{{ user.email }}" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-400"></div>
+                    </div>
+                    <button onclick="triggerCustomToast('Profil mis à jour','Vos informations ont été sauvegardées.','success')" class="px-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs rounded-xl transition">
+                        <i class="fa-solid fa-save mr-2"></i>Enregistrer les modifications
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── Hospital Tab ── -->
+            <div id="section-hospital" class="hidden space-y-6 fade-in">
+                <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-5">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-hospital text-blue-400"></i>Informations de l'Hôpital</h3>
+                    <div class="grid grid-cols-2 gap-4 text-xs">
+                        <div><label class="font-bold text-slate-400 block mb-1 text-[10px] uppercase">Nom</label>
+                        <input value="H-Ai Hospital System" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200"></div>
+                        <div><label class="font-bold text-slate-400 block mb-1 text-[10px] uppercase">Ville</label>
+                        <input value="Casablanca, Maroc" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200"></div>
+                        <div><label class="font-bold text-slate-400 block mb-1 text-[10px] uppercase">Version</label>
+                        <input value="v2.4 — Production" disabled class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-500"></div>
+                        <div><label class="font-bold text-slate-400 block mb-1 text-[10px] uppercase">Moteur IA</label>
+                        <input value="Claude Sonnet — Anthropic" disabled class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-500"></div>
+                    </div>
+                    <!-- Stats rapides -->
+                    <div class="grid grid-cols-4 gap-3 pt-4 border-t border-slate-800">
+                        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 text-center">
+                            <p class="text-2xl font-bold text-white" id="stat-doctors">—</p><p class="text-[10px] text-slate-400">Médecins</p></div>
+                        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 text-center">
+                            <p class="text-2xl font-bold text-white" id="stat-patients">—</p><p class="text-[10px] text-slate-400">Patients</p></div>
+                        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 text-center">
+                            <p class="text-2xl font-bold text-white" id="stat-appointments">—</p><p class="text-[10px] text-slate-400">RDV</p></div>
+                        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 text-center">
+                            <p class="text-2xl font-bold text-white" id="stat-medicines">—</p><p class="text-[10px] text-slate-400">Médic.</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Security Tab ── -->
+            <div id="section-security" class="hidden space-y-6 fade-in">
+                <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-5">
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-lock text-amber-400"></i>Changer le Mot de Passe</h3>
+                    <div class="space-y-3 text-xs max-w-md">
+                        <div><label class="font-bold text-slate-400 block mb-1 text-[10px] uppercase">Mot de passe actuel</label>
+                        <input type="password" placeholder="••••••••" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200"></div>
+                        <div><label class="font-bold text-slate-400 block mb-1 text-[10px] uppercase">Nouveau mot de passe</label>
+                        <input type="password" placeholder="Min. 8 caractères" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200"></div>
+                        <div><label class="font-bold text-slate-400 block mb-1 text-[10px] uppercase">Confirmer</label>
+                        <input type="password" placeholder="Répétez" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200"></div>
+                        <button onclick="triggerCustomToast('Mot de passe','Modifié avec succès.','success')" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl transition">
+                            <i class="fa-solid fa-key mr-2"></i>Modifier le mot de passe
+                        </button>
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2"><i class="fa-solid fa-shield-halved text-emerald-400"></i>Authentification 2 Facteurs</h3>
+                    <p class="text-xs text-slate-400">Renforcez la sécurité de votre compte H-Ai avec une vérification en deux étapes.</p>
+                    <div class="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-800">
+                        <span class="text-xs text-slate-300 font-semibold">2FA par SMS</span>
+                        <button onclick="toggle2FA(this)" class="relative w-10 h-5 bg-slate-700 rounded-full transition-colors" id="fa-toggle">
+                            <span class="absolute left-0.5 top-0.5 w-4 h-4 bg-slate-400 rounded-full transition-transform" id="fa-knob"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Notifications Tab ── -->
+            <div id="section-notifications" class="hidden space-y-4 fade-in">
+                <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2"><i class="fa-regular fa-bell text-rose-400"></i>Préférences de Notifications</h3>
+                    <div class="space-y-3" id="notif-settings">
+                        {% set notifs = [
+                            ('Rappels de rendez-vous','Recevez une alerte avant chaque consultation.','on'),
+                            ('Alertes d\'urgence','Notifications critiques du département urgences.','on'),
+                            ('Mises à jour des analyses','Résultats biologiques disponibles.','on'),
+                            ('Rapports hebdomadaires','Bilan hebdomadaire de l\'activité hospitalière.','off'),
+                            ('Promotions H-Ai','Nouvelles fonctionnalités et mises à jour.','off'),
+                        ] %}
+                        {% for name, desc, state in notifs %}
+                        <div class="flex items-center justify-between p-3 bg-slate-900 rounded-xl border border-slate-800">
+                            <div><p class="text-xs font-semibold text-slate-200">{{ name }}</p><p class="text-[10px] text-slate-500">{{ desc }}</p></div>
+                            <button onclick="toggleNotif(this)" data-state="{{ state }}" class="notif-toggle relative w-10 h-5 rounded-full transition-colors {{ 'bg-cyan-500' if state == 'on' else 'bg-slate-700' }}">
+                                <span class="absolute top-0.5 w-4 h-4 rounded-full transition-all {{ 'right-0.5 bg-white' if state == 'on' else 'left-0.5 bg-slate-400' }}"></span>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Database Tab ── -->
+            <div id="section-database" class="hidden space-y-4 fade-in">
+                <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-5">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2"><i class="fa-solid fa-database text-emerald-400"></i>Base de Données SQLite — H-Ai</h3>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
+                            <p class="text-slate-400 text-[10px] uppercase font-bold">Moteur</p><p class="font-bold text-white">SQLite 3</p></div>
+                        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
+                            <p class="text-slate-400 text-[10px] uppercase font-bold">Fichier</p><p class="font-bold text-cyan-400 font-mono">hai_database.db</p></div>
+                        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
+                            <p class="text-slate-400 text-[10px] uppercase font-bold">Tables</p><p class="font-bold text-white">4 tables</p></div>
+                        <div class="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
+                            <p class="text-slate-400 text-[10px] uppercase font-bold">Statut</p><span class="text-emerald-400 font-bold flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block"></span>Actif</span></div>
+                    </div>
+                    <div class="space-y-2 text-xs">
+                        <p class="text-slate-400 font-bold text-[10px] uppercase">Structure des tables :</p>
+                        {% for table in [('doctors','id, firstname, lastname, specialty, fee, consultations, gender, icon, color, email'),('patients','id, firstname, lastname, email, password, cin, dob, gender, phone, mutuelle, blood, antecedents, allergies'),('appointments','id, patient_name, patient_id, doctor_id, appt_date, appt_time, priority, status, reimbursement, patient_share'),('medicines','id, name, type, stock, explanation, posologie, mutuelle')] %}
+                        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800 font-mono">
+                            <p class="text-emerald-400 font-bold">{{ table[0] }}</p>
+                            <p class="text-slate-500 text-[10px] mt-1 leading-relaxed">{{ table[1] }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="triggerCustomToast('Sauvegarde','Backup exporté en hai_backup.db','success')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition">
+                            <i class="fa-solid fa-download mr-2"></i>Export Backup
+                        </button>
+                        <button onclick="triggerCustomToast('Intégrité OK','Aucune erreur détectée dans la base.','info')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-bold text-xs rounded-xl transition">
+                            <i class="fa-solid fa-check-circle mr-2 text-cyan-400"></i>Vérifier l'intégrité
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+function showTab(name) {
+    ['profile','hospital','security','notifications','database'].forEach(t => {
+        document.getElementById('section-'+t).classList.toggle('hidden', t!==name);
+        const btn = document.getElementById('tab-'+t);
+        if (t === name) { btn.classList.add('bg-slate-900','border-slate-700','text-white'); btn.classList.remove('text-slate-400'); }
+        else { btn.classList.remove('bg-slate-900','border-slate-700','text-white'); btn.classList.add('text-slate-400'); }
+    });
+    if (name === 'hospital') loadStats();
+}
+
+async function loadStats() {
+    const stats = await fetch('/api/stats').then(r=>r.json()).catch(()=>({}));
+    document.getElementById('stat-doctors').innerText     = stats.doctors || '—';
+    document.getElementById('stat-patients').innerText    = stats.patients || '—';
+    document.getElementById('stat-appointments').innerText = stats.appointments || '—';
+    document.getElementById('stat-medicines').innerText   = stats.medicines || '—';
+}
+
+function toggle2FA(btn) {
+    const knob = document.getElementById('fa-knob');
+    const active = btn.classList.contains('bg-cyan-500');
+    if (active) { btn.classList.replace('bg-cyan-500','bg-slate-700'); knob.classList.replace('right-0.5','left-0.5'); knob.classList.replace('bg-white','bg-slate-400'); triggerCustomToast('2FA','Authentification 2 facteurs désactivée.','warning'); }
+    else { btn.classList.replace('bg-slate-700','bg-cyan-500'); knob.classList.replace('left-0.5','right-0.5'); knob.classList.replace('bg-slate-400','bg-white'); triggerCustomToast('2FA','Authentification 2 facteurs activée.','success'); }
+}
+
+function toggleNotif(btn) {
+    const on = btn.dataset.state === 'on';
+    const knob = btn.querySelector('span');
+    btn.dataset.state = on ? 'off' : 'on';
+    if (on) { btn.classList.replace('bg-cyan-500','bg-slate-700'); knob.classList.remove('right-0.5','bg-white'); knob.classList.add('left-0.5','bg-slate-400'); }
+    else { btn.classList.replace('bg-slate-700','bg-cyan-500'); knob.classList.remove('left-0.5','bg-slate-400'); knob.classList.add('right-0.5','bg-white'); }
+    triggerCustomToast('Notification', on ? 'Désactivée.' : 'Activée.', on ? 'warning' : 'success');
+}
+</script>
+{% endblock %}

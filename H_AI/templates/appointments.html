@@ -1,0 +1,138 @@
+{% extends "layout.html" %}
+{% block title %}Rendez-vous{% endblock %}
+{% block page_title %}Prise de RDV{% endblock %}
+{% block page_subtitle %}Gestion du flux des consultations{% endblock %}
+{% set active = 'appointments' %}
+
+{% block content %}
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+    <!-- Form -->
+    <div class="xl:col-span-7 space-y-6">
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-calendar-plus text-cyan-400"></i>Nouveau Dossier d'Admission</h3>
+            <div class="space-y-4 text-xs">
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="font-semibold text-slate-300 block mb-1">Nom du Patient</label>
+                    <input id="appt-name" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-400" placeholder="Ex: Fatine Chraibi"></div>
+                    <div><label class="font-semibold text-slate-300 block mb-1">Date</label>
+                    <input type="date" id="appt-date" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-400"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="font-semibold text-slate-300 block mb-1">Heure</label>
+                    <input type="time" id="appt-time" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-400"></div>
+                    <div><label class="font-semibold text-slate-300 block mb-1">Médecin</label>
+                    <select id="appt-doctor" onchange="updateEstimations()" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-400"></select></div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="font-semibold text-slate-300 block mb-1">Couverture Mutuelle</label>
+                    <select id="appt-mutuelle" onchange="updateEstimations()" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-400">
+                        <option value="CNSS">CNSS / AMO (70%)</option>
+                        <option value="CNOPS">CNOPS (80%)</option>
+                        <option value="RAMED">AMO Solidaire (100%)</option>
+                        <option value="SANS">Sans Couverture (0%)</option>
+                    </select></div>
+                    <div><label class="font-semibold text-slate-300 block mb-1">Priorité</label>
+                    <select id="appt-priority" class="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-400">
+                        <option>Standard</option><option>Basse</option><option>Haute</option><option>Urgente</option>
+                    </select></div>
+                </div>
+
+                <!-- AMO Estimations -->
+                <div class="p-4 bg-slate-900/60 rounded-xl border border-slate-800/80 space-y-2">
+                    <div class="flex justify-between"><span class="text-slate-400">Prix de base:</span><span class="text-slate-100 font-bold" id="est-base">-- DH</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Remboursement AMO:</span><span class="text-emerald-400 font-bold" id="est-reimb">-- DH</span></div>
+                    <div class="flex justify-between border-t border-slate-800 pt-2 text-sm"><span class="text-slate-300 font-bold">Ticket Modérateur:</span><span class="text-amber-500 font-bold" id="est-share">-- DH</span></div>
+                </div>
+
+                <button onclick="saveAppointment()" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black rounded-xl transition shadow-lg uppercase tracking-wider text-xs">
+                    Enregistrer et Générer le reçu AMO
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointments List -->
+    <div class="xl:col-span-5">
+        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+            <h4 class="text-md font-bold text-white flex items-center gap-2"><i class="fa-solid fa-list-check text-emerald-400"></i>Rendez-vous Récents</h4>
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead><tr class="border-b border-slate-800 text-slate-400">
+                        <th class="py-2 px-2 text-left">Patient</th>
+                        <th class="py-2 px-2 text-left">Médecin</th>
+                        <th class="py-2 px-2 text-left">Date</th>
+                        <th class="py-2 px-2 text-center">Statut</th>
+                    </tr></thead>
+                    <tbody id="appts-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script>
+let doctors = [];
+
+async function loadDoctors() {
+    doctors = await fetch('/api/doctors').then(r=>r.json());
+    const sel = document.getElementById('appt-doctor');
+    sel.innerHTML = doctors.map(d =>
+        `<option value="${d.id}" data-fee="${d.fee}">${d.gender==='M'?'Dr.':'Dra.'} ${d.lastname} (${d.specialty})</option>`
+    ).join('');
+    updateEstimations();
+}
+
+function updateEstimations() {
+    const docId = parseInt(document.getElementById('appt-doctor').value);
+    const mut = document.getElementById('appt-mutuelle').value;
+    const doc = doctors.find(d => d.id === docId);
+    if (!doc) return;
+    const rate = {CNOPS:0.8,RAMED:1.0,SANS:0.0}[mut] ?? 0.7;
+    const reimb = Math.floor(doc.fee * rate), share = doc.fee - reimb;
+    document.getElementById('est-base').innerText  = `${doc.fee} DH`;
+    document.getElementById('est-reimb').innerText = `${reimb} DH (${rate*100}%)`;
+    document.getElementById('est-share').innerText = `${share} DH`;
+}
+
+async function loadAppointments() {
+    const appts = await fetch('/api/appointments').then(r=>r.json());
+    const tbody = document.getElementById('appts-tbody');
+    tbody.innerHTML = appts.slice(0,10).map(a => {
+        const sc = a.status==='Confirmé' ? 'text-emerald-400' : 'text-yellow-500';
+        return `<tr class="hover:bg-slate-900/30 transition text-slate-300 border-b border-slate-800/40 text-xs">
+            <td class="py-2 px-2 font-semibold text-white">${a.patient_name}</td>
+            <td class="py-2 px-2">${a.lastname || 'H-Ai'}</td>
+            <td class="py-2 px-2 font-mono">${a.appt_date || '—'}</td>
+            <td class="py-2 px-2 text-center"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${sc}">${a.status}</span></td>
+        </tr>`;
+    }).join('');
+}
+
+async function saveAppointment() {
+    const name     = document.getElementById('appt-name').value.trim();
+    const date     = document.getElementById('appt-date').value;
+    const time     = document.getElementById('appt-time').value;
+    const doctor_id = document.getElementById('appt-doctor').value;
+    const mutuelle = document.getElementById('appt-mutuelle').value;
+    const priority = document.getElementById('appt-priority').value;
+    if (!name || !date || !time) { triggerCustomToast('Données manquantes','Remplissez tous les champs obligatoires.','warning'); return; }
+    const res = await fetch('/api/appointments',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({patient_name:name, appt_date:date, appt_time:time, doctor_id, mutuelle, priority})
+    });
+    const data = await res.json();
+    if (data.ok) {
+        triggerCustomToast('RDV Enregistré',`Admission validée — Remboursement: ${data.reimbursement}. Part patient: ${data.patient_share}.`,'success');
+        document.getElementById('appt-name').value = '';
+        document.getElementById('appt-date').value = '';
+        document.getElementById('appt-time').value = '';
+        loadAppointments();
+    }
+}
+
+loadDoctors();
+loadAppointments();
+</script>
+{% endblock %}
